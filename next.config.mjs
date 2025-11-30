@@ -20,7 +20,8 @@ const nextConfig = {
       },
     ],
   },
-  output: 'standalone',
+  // Removed 'standalone' output mode - not compatible with Vercel
+  // output: 'standalone',
   experimental: {
     cpus: 1,
   },

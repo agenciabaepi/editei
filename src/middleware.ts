@@ -3,29 +3,30 @@ import { NextRequest, NextResponse } from 'next/server';
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon files
-     * - public files (images, fonts, etc)
-     * Note: Root path (/) is handled explicitly in the middleware function
+     * Match specific routes only - exclude root path completely
+     * This ensures the root path is never processed by middleware
      */
-    '/((?!api|_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf|css|js|json|xml|txt)).*)',
+    '/dashboard/:path*',
+    '/editor/:path*',
+    '/subscription/:path*',
+    '/profile/:path*',
+    '/sign-in/:path*',
+    '/sign-up/:path*',
+    '/admin/:path*',
+    '/help/:path*',
+    '/pricing/:path*',
+    '/privacy/:path*',
+    '/terms/:path*',
+    '/forgot-password/:path*',
   ],
 };
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  
-  // CRITICAL: Allow root path to pass through immediately - no processing
-  if (pathname === '/' || pathname === '') {
-    return NextResponse.next();
-  }
-  
   // Protected routes that require authentication
   const protectedPaths = ['/dashboard', '/editor', '/subscription', '/profile'];
   const authPaths = ['/sign-in', '/sign-up'];
+  
+  const { pathname } = request.nextUrl;
   
   // Check if the current path is protected
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));

@@ -599,7 +599,7 @@ export default function AdminPage() {
                     value={fontUploadForm.category}
                     onValueChange={(value) => setFontUploadForm({ ...fontUploadForm, category: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id="font-category">
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
                     <SelectContent>
@@ -635,7 +635,7 @@ export default function AdminPage() {
                 
                 {fontUploadForm.fontFiles.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Clique em &quot;Adicionar Arquivo&quot; para começar
+                    Clique em "Adicionar Arquivo" para começar
                   </p>
                 ) : (
                   <div className="space-y-3">

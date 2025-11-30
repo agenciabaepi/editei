@@ -118,11 +118,11 @@ class FontLoader {
           if (!font.is_active) return; // Skip inactive fonts
           
           // Extract weights from font_files if available, otherwise use weights array
-          let weights: number[] = font.weights || [400];
+          let weights = font.weights || [400];
           if (font.font_files && Array.isArray(font.font_files) && font.font_files.length > 0) {
             weights = font.font_files.map((f: any) => f.weight || 400);
             // Remove duplicates and sort
-            weights = Array.from(new Set(weights)).sort((a: number, b: number) => a - b);
+            weights = [...new Set(weights)].sort((a, b) => a - b);
           }
           
           // Convert custom font to FontDefinition
@@ -339,11 +339,11 @@ class FontLoader {
     // Clear existing custom fonts from cache (keep only PROFESSIONAL_FONTS)
     const professionalFontNames = new Set(PROFESSIONAL_FONTS.map(f => f.name));
     const toDelete: string[] = [];
-    Array.from(this.fontCache.entries()).forEach(([name]) => {
+    for (const [name] of this.fontCache.entries()) {
       if (!professionalFontNames.has(name)) {
         toDelete.push(name);
       }
-    });
+    }
     toDelete.forEach(name => {
       this.fontCache.delete(name);
       this.loadedFonts.delete(name);
@@ -351,6 +351,10 @@ class FontLoader {
     console.log('[FontLoader] Cleared', toDelete.length, 'custom fonts from cache');
     await this.loadCustomFonts();
     console.log('[FontLoader] Reloaded custom fonts. Total fonts in cache:', this.fontCache.size);
+  }
+
+  getAllFonts(): FontDefinition[] {
+    return Array.from(this.fontCache.values());
   }
 }
 

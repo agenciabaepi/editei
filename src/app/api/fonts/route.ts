@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 // GET - List all active custom fonts (public endpoint for font-loader)
 export async function GET() {
   try {
+    console.log('[API /api/fonts] Request received');
     const client = await pool.connect();
     
     try {
@@ -28,21 +29,20 @@ export async function GET() {
             userClient.release();
           }
         }
-      } catch {
+      } catch (e) {
         // If no session, user is not PRO
+        console.log('[API /api/fonts] No session or error checking subscription:', e);
       }
 
       // Return all active fonts, let frontend handle PRO filtering for better UX
       // This way users can see PRO fonts exist but will be blocked when trying to use
+      console.log('[API /api/fonts] Querying database...');
       const result = await client.query(
         `SELECT 
           cf.id, 
           cf.name, 
           cf.family_name, 
           cf.category, 
-          cf.weights, 
-          cf.file_url, 
-          cf.file_format, 
           cf.is_popular,
           cf.is_pro,
           COALESCE(
@@ -61,18 +61,19 @@ export async function GET() {
         FROM custom_fonts cf
         LEFT JOIN font_files ff ON cf.id = ff.font_id
         WHERE cf.is_active = true
-        GROUP BY cf.id
+        GROUP BY cf.id, cf.name, cf.family_name, cf.category, cf.is_popular, cf.is_pro, cf.created_at
         ORDER BY cf.is_popular DESC, cf.created_at DESC`
       );
       
+      console.log('[API /api/fonts] Found', result.rows.length, 'fonts');
       return NextResponse.json({ fonts: result.rows });
     } finally {
       client.release();
     }
   } catch (error) {
-    console.error("Error fetching fonts:", error);
+    console.error("[API /api/fonts] Error fetching fonts:", error);
     return NextResponse.json(
-      { fonts: [] }, // Return empty array on error
+      { fonts: [], error: error instanceof Error ? error.message : 'Unknown error' }, // Return empty array on error
       { status: 200 }
     );
   }

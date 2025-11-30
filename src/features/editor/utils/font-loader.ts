@@ -122,7 +122,7 @@ class FontLoader {
           if (font.font_files && Array.isArray(font.font_files) && font.font_files.length > 0) {
             weights = font.font_files.map((f: any) => f.weight || 400);
             // Remove duplicates and sort
-            weights = [...new Set(weights)].sort((a, b) => a - b);
+            weights = Array.from(new Set(weights)).sort((a, b) => a - b);
           }
           
           // Convert custom font to FontDefinition

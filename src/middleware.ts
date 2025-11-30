@@ -7,6 +7,11 @@ export async function middleware(request: NextRequest) {
   
   const { pathname } = request.nextUrl;
   
+  // Allow root path to pass through
+  if (pathname === '/') {
+    return NextResponse.next();
+  }
+  
   // Check if the current path is protected
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
   const isAuthPath = authPaths.some(path => pathname.startsWith(path));

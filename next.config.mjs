@@ -22,9 +22,10 @@ const nextConfig = {
   },
   // Removed 'standalone' output mode - not compatible with Vercel
   // output: 'standalone',
-  experimental: {
-    cpus: 1,
-  },
+  // Removed experimental.cpus - may cause issues on Vercel
+  // experimental: {
+  //   cpus: 1,
+  // },
   async headers() {
     return [
       {

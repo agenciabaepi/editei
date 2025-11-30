@@ -339,11 +339,11 @@ class FontLoader {
     // Clear existing custom fonts from cache (keep only PROFESSIONAL_FONTS)
     const professionalFontNames = new Set(PROFESSIONAL_FONTS.map(f => f.name));
     const toDelete: string[] = [];
-    for (const [name] of this.fontCache.entries()) {
+    Array.from(this.fontCache.entries()).forEach(([name]) => {
       if (!professionalFontNames.has(name)) {
         toDelete.push(name);
       }
-    }
+    });
     toDelete.forEach(name => {
       this.fontCache.delete(name);
       this.loadedFonts.delete(name);

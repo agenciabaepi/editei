@@ -20,25 +20,6 @@ const nextConfig = {
       },
     ],
   },
-  // Removed 'standalone' output mode - not compatible with Vercel
-  // output: 'standalone',
-  // Removed experimental.cpus - may cause issues on Vercel
-  // experimental: {
-  //   cpus: 1,
-  // },
-  async headers() {
-    return [
-      {
-        source: '/templates/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
-        ],
-      },
-    ];
-  },
 };
 
 export default nextConfig;

@@ -56,10 +56,10 @@ export const FontSidebar = ({
             console.log('[Font Sidebar] Loading custom font:', font.family_name, { is_pro: font.is_pro, shouldBlock });
             
             // Extract weights from font_files if available
-            let weights = font.weights || [400];
+            let weights: number[] = font.weights || [400];
             if (font.font_files && Array.isArray(font.font_files) && font.font_files.length > 0) {
-              weights = font.font_files.map((f: any) => f.weight || 400);
-              weights = [...new Set(weights)].sort((a, b) => a - b);
+              const extractedWeights = font.font_files.map((f: any) => f.weight || 400);
+              weights = Array.from(new Set<number>(extractedWeights)).sort((a, b) => a - b);
             }
             
             // Create FontDefinition for custom font
@@ -310,10 +310,10 @@ export const FontSidebar = ({
               customFontsData.forEach((font: any) => {
                 if (!font.is_active) return;
                 
-                let weights = font.weights || [400];
+                let weights: number[] = font.weights || [400];
                 if (font.font_files && Array.isArray(font.font_files) && font.font_files.length > 0) {
-                  weights = font.font_files.map((f: any) => f.weight || 400);
-                  weights = [...new Set(weights)].sort((a, b) => a - b);
+                  const extractedWeights = font.font_files.map((f: any) => f.weight || 400);
+                  weights = Array.from(new Set<number>(extractedWeights)).sort((a, b) => a - b);
                 }
                 
                 const fontDef: FontDefinition = {

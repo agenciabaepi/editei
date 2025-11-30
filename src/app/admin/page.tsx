@@ -635,7 +635,7 @@ export default function AdminPage() {
                 
                 {fontUploadForm.fontFiles.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Clique em "Adicionar Arquivo" para começar
+                    Clique em &quot;Adicionar Arquivo&quot; para começar
                   </p>
                 ) : (
                   <div className="space-y-3">

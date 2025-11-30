@@ -53,7 +53,7 @@ export const FontSidebar = ({
           customFontsData.forEach((font: any) => {
             if (!font.is_active) return;
             
-            console.log('[Font Sidebar] Loading custom font:', font.family_name, { is_pro: font.is_pro, shouldBlock });
+            console.log('[Font Sidebar] Loading custom font:', font.family_name, { is_pro: font.is_pro });
             
             // Extract weights from font_files if available
             let weights = font.weights || [400];
@@ -134,7 +134,7 @@ export const FontSidebar = ({
       clearTimeout(timeout);
       clearInterval(interval);
     };
-  }, []);
+  }, [shouldBlock]);
 
   const onClose = () => {
     onChangeActiveTool("select");

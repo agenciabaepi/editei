@@ -599,7 +599,7 @@ export default function AdminPage() {
                     value={fontUploadForm.category}
                     onValueChange={(value) => setFontUploadForm({ ...fontUploadForm, category: value })}
                   >
-                    <SelectTrigger id="font-category">
+                    <SelectTrigger>
                       <SelectValue placeholder="Selecione a categoria" />
                     </SelectTrigger>
                     <SelectContent>

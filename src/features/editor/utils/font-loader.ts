@@ -118,11 +118,11 @@ class FontLoader {
           if (!font.is_active) return; // Skip inactive fonts
           
           // Extract weights from font_files if available, otherwise use weights array
-          let weights = font.weights || [400];
+          let weights: number[] = font.weights || [400];
           if (font.font_files && Array.isArray(font.font_files) && font.font_files.length > 0) {
             weights = font.font_files.map((f: any) => f.weight || 400);
             // Remove duplicates and sort
-            weights = Array.from(new Set(weights)).sort((a, b) => a - b);
+            weights = Array.from(new Set(weights)).sort((a: number, b: number) => a - b);
           }
           
           // Convert custom font to FontDefinition

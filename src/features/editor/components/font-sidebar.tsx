@@ -56,10 +56,10 @@ export const FontSidebar = ({
             console.log('[Font Sidebar] Loading custom font:', font.family_name, { is_pro: font.is_pro });
             
             // Extract weights from font_files if available
-            let weights = font.weights || [400];
+            let weights: number[] = font.weights || [400];
             if (font.font_files && Array.isArray(font.font_files) && font.font_files.length > 0) {
               weights = font.font_files.map((f: any) => f.weight || 400);
-              weights = Array.from(new Set(weights)).sort((a, b) => a - b);
+              weights = Array.from(new Set(weights)).sort((a: number, b: number) => a - b);
             }
             
             // Create FontDefinition for custom font

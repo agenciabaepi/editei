@@ -4,28 +4,28 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - / (root path - explicitly excluded)
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon files
      * - public files (images, fonts, etc)
+     * Note: Root path (/) is handled explicitly in the middleware function
      */
-    '/((?!$|api|_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf|css|js|json|xml|txt)).*)',
+    '/((?!api|_next/static|_next/image|favicon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf|css|js|json|xml|txt)).*)',
   ],
 };
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // CRITICAL: Allow root path to pass through immediately - no processing
+  if (pathname === '/' || pathname === '') {
+    return NextResponse.next();
+  }
+  
   // Protected routes that require authentication
   const protectedPaths = ['/dashboard', '/editor', '/subscription', '/profile'];
   const authPaths = ['/sign-in', '/sign-up'];
-  
-  const { pathname } = request.nextUrl;
-  
-  // Allow root path to pass through
-  if (pathname === '/') {
-    return NextResponse.next();
-  }
   
   // Check if the current path is protected
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));

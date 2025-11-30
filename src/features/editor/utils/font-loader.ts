@@ -352,10 +352,6 @@ class FontLoader {
     await this.loadCustomFonts();
     console.log('[FontLoader] Reloaded custom fonts. Total fonts in cache:', this.fontCache.size);
   }
-
-  getAllFonts(): FontDefinition[] {
-    return Array.from(this.fontCache.values());
-  }
 }
 
 // Create singleton instance only on client side

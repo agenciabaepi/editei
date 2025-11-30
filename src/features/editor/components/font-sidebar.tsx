@@ -134,7 +134,7 @@ export const FontSidebar = ({
       clearTimeout(timeout);
       clearInterval(interval);
     };
-  }, []);
+  }, [shouldBlock]);
 
   const onClose = () => {
     onChangeActiveTool("select");

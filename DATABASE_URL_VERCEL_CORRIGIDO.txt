@@ -1,0 +1,59 @@
+# Connection String CORRIGIDA para Vercel
+
+## ⚠️ Erro Atual: "Tenant or user not found"
+Isso significa que a conexão está chegando ao Supabase, mas a autenticação está falhando.
+
+## ✅ Connection String CORRIGIDA (use esta):
+
+### Opção 1: Connection Pooling com formato correto
+postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+
+### Opção 2: Conexão Direta (mais simples, recomendada)
+postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/postgres
+
+## 🔧 Se a Opção 1 não funcionar, tente estas variações:
+
+### Variação 1: Sem pgbouncer parameter
+postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+
+### Variação 2: Outras regiões comuns (se us-east-1 não funcionar)
+# Tente estas regiões uma por uma:
+# us-west-1
+postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-us-west-1.pooler.supabase.com:6543/postgres
+
+# eu-west-1
+postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
+
+# ap-southeast-1
+postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
+
+## 📋 INSTRUÇÕES:
+
+1. **PRIMEIRO**: Tente a Opção 2 (conexão direta) - é mais simples e não depende da região
+2. Se funcionar, ótimo!
+3. Se não funcionar, verifique:
+   - A senha está correta? (deve ser @Deusefiel7)
+   - A connection string está completa?
+   - Não há espaços extras?
+
+4. No Vercel:
+   - Settings → Environment Variables
+   - Edite DATABASE_URL
+   - Cole a connection string
+   - Salve
+   - Redeploy
+
+## 🔍 Para descobrir a região correta:
+
+1. Acesse: https://supabase.com/dashboard/project/hmapxmbfhblrfjoweoed
+2. Vá em Settings → General
+3. Procure por "Region" ou "Data center location"
+4. Use essa região na connection string
+
+## ✅ RECOMENDAÇÃO FINAL:
+
+Use a **Opção 2 (conexão direta)** primeiro - ela é mais confiável e não depende da região:
+```
+postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/postgres
+```
+

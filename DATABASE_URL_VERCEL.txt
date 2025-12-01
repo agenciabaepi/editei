@@ -1,0 +1,29 @@
+# Connection String para Configurar no Vercel
+
+## Opção 1: Connection Pooling (RECOMENDADA para produção/Vercel)
+postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+
+## Opção 2: Conexão Direta (alternativa)
+postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/postgres
+
+## 📋 INSTRUÇÕES PARA COLAR NO VERCEL:
+
+1. Acesse: https://vercel.com/dashboard
+2. Vá no projeto "canva"
+3. Settings → Environment Variables
+4. Procure por DATABASE_URL:
+   - Se NÃO existir: Clique em "Add New"
+   - Se já existir: Clique para editar
+5. Cole uma das connection strings acima (recomendo a Opção 1)
+6. Selecione TODOS os ambientes:
+   ✅ Production
+   ✅ Preview  
+   ✅ Development
+7. Clique em "Save"
+8. Vá em Deployments → Redeploy (sem cache)
+
+## ⚠️ IMPORTANTE:
+- A senha está URL-encoded como %40Deusefiel7 (o @ vira %40)
+- Use a Opção 1 (pooling) para produção - é mais eficiente
+- Após adicionar, faça um redeploy para aplicar
+

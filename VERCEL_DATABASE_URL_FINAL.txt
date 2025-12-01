@@ -1,0 +1,60 @@
+# 🔧 CONNECTION STRING FINAL PARA VERCEL
+
+## ✅ USE ESTA CONNECTION STRING (COPIE E COLE):
+
+```
+postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/postgres
+```
+
+## 📋 PASSOS NO VERCEL:
+
+1. Acesse: https://vercel.com/dashboard
+2. Projeto "canva" → **Settings** → **Environment Variables**
+3. Procure por `DATABASE_URL`:
+   - Se NÃO existir: Clique em **"Add New"**
+   - Se já existir: Clique para **EDITAR**
+4. **APAGUE** o conteúdo atual
+5. **COLE** a connection string acima (a linha completa)
+6. **IMPORTANTE**: Selecione TODOS os ambientes:
+   ✅ Production
+   ✅ Preview
+   ✅ Development
+7. Clique em **"Save"**
+8. Vá em **Deployments**
+9. Clique nos três pontos (⋯) do último deployment
+10. Selecione **"Redeploy"**
+11. **DESMARQUE** "Use existing Build Cache"
+12. Clique em **"Redeploy"**
+13. Aguarde o deploy completar
+14. Teste o login novamente
+
+## ⚠️ VERIFICAÇÕES IMPORTANTES:
+
+- ✅ A connection string deve começar com `postgresql://`
+- ✅ Deve conter `db.hmapxmbfhblrfjoweoed.supabase.co`
+- ✅ A senha está URL-encoded: `%40Deusefiel7` (não `@Deusefiel7`)
+- ✅ Não deve ter espaços antes ou depois
+- ✅ Não deve ter quebras de linha
+
+## 🔍 SE AINDA NÃO FUNCIONAR:
+
+1. Verifique se a connection string foi salva corretamente:
+   - Vá em Settings → Environment Variables
+   - Clique em DATABASE_URL
+   - Verifique se está exatamente como acima
+
+2. Verifique os logs do Vercel:
+   - Vá em Deployments → clique no deployment
+   - Veja os "Function Logs" ou "Runtime Logs"
+   - Procure por erros de conexão
+
+3. Teste com a connection string do pooler (se a direta não funcionar):
+   ```
+   postgresql://postgres.hmapxmbfhblrfjoweoed:%40Deusefiel7@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+   ```
+   (Mas primeiro tente a conexão direta acima)
+
+## ✅ APÓS CONFIGURAR:
+
+O erro "Tenant or user not found" deve desaparecer e o login deve funcionar!
+

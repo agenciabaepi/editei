@@ -42,6 +42,8 @@ import {
 import { ProjectNameDialog } from "@/components/project-name-dialog";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { fabric } from "fabric";
 
 interface NavbarProps {
   id: string;
@@ -93,6 +95,59 @@ export const Navbar = ({
     },
   });
 
+  // Função para recarregar imagens com crossOrigin antes de exportar
+  const reloadImagesWithCrossOrigin = async (canvas: fabric.Canvas): Promise<void> => {
+    const imageObjects = canvas.getObjects().filter(obj => obj.type === 'image') as fabric.Image[];
+    
+    if (imageObjects.length === 0) return;
+    
+    return new Promise((resolve) => {
+      let loadedCount = 0;
+      const totalImages = imageObjects.length;
+      
+      if (totalImages === 0) {
+        resolve();
+        return;
+      }
+      
+      imageObjects.forEach((imgObj) => {
+        const imgElement = imgObj.getElement() as HTMLImageElement;
+        if (!imgElement || !imgElement.src) {
+          loadedCount++;
+          if (loadedCount === totalImages) resolve();
+          return;
+        }
+        
+        // Criar nova imagem com crossOrigin
+        const newImg = document.createElement('img');
+        newImg.crossOrigin = 'anonymous';
+        
+        newImg.onload = () => {
+          // Substituir a imagem no objeto
+          imgObj.setElement(newImg);
+          imgObj.setCoords();
+          loadedCount++;
+          if (loadedCount === totalImages) {
+            canvas.renderAll();
+            resolve();
+          }
+        };
+        
+        newImg.onerror = () => {
+          // Se falhar, continuar mesmo assim
+          console.warn('Failed to reload image with crossOrigin:', imgElement.src);
+          loadedCount++;
+          if (loadedCount === totalImages) {
+            canvas.renderAll();
+            resolve();
+          }
+        };
+        
+        newImg.src = imgElement.src;
+      });
+    });
+  };
+
   const handleExport = async (formatId: string) => {
     if (!editor) return;
 
@@ -110,6 +165,9 @@ export const Navbar = ({
     const originalHeight = workspace?.height ?? 0;
 
     try {
+      // Recarregar imagens com crossOrigin antes de exportar
+      await reloadImagesWithCrossOrigin(editor.canvas);
+      
       let dataUrl: string;
       
       switch (formatId) {
@@ -235,8 +293,20 @@ export const Navbar = ({
       }
 
       downloadFile(dataUrl, format.extension);
-    } catch (error) {
+      toast.success('Exportação concluída com sucesso!');
+    } catch (error: any) {
       console.error('Export failed:', error);
+      
+      // Tratar erro de Tainted Canvas especificamente
+      if (error.name === 'SecurityError' || error.message?.includes('Tainted canvases')) {
+        toast.error(
+          'Erro ao exportar: Algumas imagens não podem ser exportadas devido a restrições de segurança. ' +
+          'Certifique-se de que todas as imagens vêm de fontes confiáveis.',
+          { duration: 5000 }
+        );
+      } else {
+        toast.error('Erro ao exportar. Tente novamente.', { duration: 3000 });
+      }
     }
   };
 

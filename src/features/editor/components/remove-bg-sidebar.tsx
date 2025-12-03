@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { AlertTriangle, Loader } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
 
@@ -35,6 +35,17 @@ export const RemoveBgSidebar = ({
 
   // @ts-ignore
   const imageSrc = selectedObject?._originalElement?.currentSrc;
+
+  // Gera partículas com posições fixas para animação
+  const particles = useMemo(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: 2 + Math.random() * 2,
+    }));
+  }, []);
 
   // Update global processing state for overlay
   useEffect(() => {
@@ -142,6 +153,29 @@ export const RemoveBgSidebar = ({
                 alt="Image"
                 className="object-cover"
               />
+              {mutation.isPending && (
+                <>
+                  {/* Efeito de scan mágico */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-400/20 to-transparent animate-scan" />
+                  {/* Partículas mágicas */}
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {particles.map((particle) => (
+                      <div
+                        key={particle.id}
+                        className="absolute w-2 h-2 bg-blue-400 rounded-full animate-float"
+                        style={{
+                          left: `${particle.left}%`,
+                          top: `${particle.top}%`,
+                          animationDelay: `${particle.delay}s`,
+                          animationDuration: `${particle.duration}s`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  {/* Brilho pulsante */}
+                  <div className="absolute inset-0 bg-gradient-radial from-blue-400/30 via-transparent to-transparent animate-pulse" />
+                </>
+              )}
             </div>
             
             {/* Progress bar */}
@@ -149,7 +183,7 @@ export const RemoveBgSidebar = ({
               <div className="space-y-2">
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Removendo fundo...</span>
+                  <span>Analisando imagem...</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
               </div>
@@ -162,7 +196,7 @@ export const RemoveBgSidebar = ({
               {mutation.isPending ? (
                 <>
                   <Loader className="size-4 mr-2 animate-spin" />
-                  Removendo fundo...
+                  Analisando imagem...
                 </>
               ) : (
                 "Remover fundo"

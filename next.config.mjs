@@ -1,7 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Ensure server-only packages are not bundled
-  serverComponentsExternalPackages: ['bcryptjs'],
+  // Headers necessários para WebAssembly
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'credentialless',
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
@@ -31,6 +47,18 @@ const nextConfig = {
         path: false,
         crypto: false,
       };
+      
+      // Configure experiments for WebAssembly (needed for onnxruntime-web)
+      config.experiments = {
+        ...config.experiments,
+        asyncWebAssembly: true,
+      };
+      
+      // Handle .wasm files - serve them as assets
+      config.module.rules.push({
+        test: /\.wasm$/,
+        type: 'asset/resource',
+      });
     } else {
       // Server-side: Ensure bcryptjs is external and not bundled
       config.externals = config.externals || [];

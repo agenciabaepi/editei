@@ -1,5 +1,7 @@
+'use client';
+
 import { useMutation } from "@tanstack/react-query";
-import { client } from "@/lib/hono";
+import { removeBackground } from "@imgly/background-removal";
 
 type RequestType = {
   image: string;
@@ -15,39 +17,45 @@ export const useRemoveBg = () => {
     Error,
     RequestType
   >({
-    mutationFn: async (json) => {
-      console.log('[useRemoveBg] Starting background removal via API');
-      console.log('[useRemoveBg] Image source:', json.image?.substring(0, 50) + '...');
+    mutationFn: async (request) => {
+      console.log('[useRemoveBg] Starting background removal (local processing - maximum quality)');
+      console.log('[useRemoveBg] Image source:', request.image?.substring(0, 50) + '...');
       const startTime = Date.now();
       
       try {
-        const response = await client.api.ai["remove-bg"].$post({
-          json: {
-            image: json.image,
-          },
+        // Converte data URL para blob
+        // Usa o tamanho original da imagem para máxima qualidade
+        const response = await fetch(request.image);
+        const blob = await response.blob();
+
+        // Processa diretamente no navegador com modelo 'large' para melhor qualidade
+        // O @imgly/background-removal inicializa onnxruntime-web automaticamente
+        console.log('[useRemoveBg] Processing with @imgly/background-removal (model: large)...');
+        const resultBlob = await removeBackground(blob, {
+          model: 'large', // 'large' = melhor qualidade possível
+          outputFormat: 'image/png',
         });
 
-        if (!response.ok) {
-          const errorBody = await response.json().catch(() => ({ error: 'Unknown error' })) as { error?: string; code?: string };
-          const errorMessage = errorBody.error || 'Unknown error';
-          console.error('[useRemoveBg] API error:', response.status, errorMessage);
-          throw new Error(errorMessage);
-        }
+        // Converte resultado para data URL
+        const reader = new FileReader();
+        const resultDataUrl = await new Promise<string>((resolve, reject) => {
+          reader.onload = (e) => {
+            resolve(e.target?.result as string);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(resultBlob);
+        });
 
-        const result = await response.json();
         const elapsed = Date.now() - startTime;
         console.log('[useRemoveBg] Background removal completed in', elapsed, 'ms');
-        console.log('[useRemoveBg] Result data URL length:', result.data?.length || 0);
+        console.log('[useRemoveBg] Result data URL length:', resultDataUrl.length);
         
-        return result;
+        return { data: resultDataUrl };
       } catch (error: any) {
         const elapsed = Date.now() - startTime;
         console.error('[useRemoveBg] Error after', elapsed, 'ms:', error);
         console.error('[useRemoveBg] Error message:', error.message);
-        
-        if (error.message?.includes('timeout')) {
-          throw new Error('Request timeout. Please try again.');
-        }
+        console.error('[useRemoveBg] Error stack:', error.stack);
         
         throw new Error(error.message || 'Erro ao remover fundo da imagem. Tente novamente.');
       }

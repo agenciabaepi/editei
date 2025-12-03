@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       `SELECT id, stripe_subscription_id, stripe_customer_id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
       [user_id]
     );
-
+    
     // Calculate period end based on plan
     const currentPeriodEnd = new Date();
     if (plan === 'monthly') {
@@ -128,17 +128,17 @@ export async function POST(request: NextRequest) {
       
       // Create new subscription
       result = await client.query(`
-        INSERT INTO subscriptions (
-          user_id, 
-          stripe_subscription_id, 
-          stripe_customer_id, 
-          status, 
-          stripe_current_period_end,
-          created_at,
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-        RETURNING *
-      `, [user_id, stripeSubscriptionId, stripeCustomerId, status, currentPeriodEnd]);
+      INSERT INTO subscriptions (
+        user_id, 
+        stripe_subscription_id, 
+        stripe_customer_id, 
+        status, 
+        stripe_current_period_end,
+        created_at,
+        updated_at
+      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+      RETURNING *
+    `, [user_id, stripeSubscriptionId, stripeCustomerId, status, currentPeriodEnd]);
     }
 
     client.release();

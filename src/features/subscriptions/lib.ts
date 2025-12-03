@@ -28,11 +28,11 @@ export const checkIsActive = (
     else if (subscription.status === 'active') {
       // If there's a period end date, check if it's still valid
       if (subscription.stripe_current_period_end) {
-        const periodEndTime = subscription.stripe_current_period_end.getTime();
-        const currentTime = Date.now();
-        const gracePeriod = DAY_IN_MS;
-        
-        active = periodEndTime + gracePeriod > currentTime;
+      const periodEndTime = subscription.stripe_current_period_end.getTime();
+      const currentTime = Date.now();
+      const gracePeriod = DAY_IN_MS;
+      
+      active = periodEndTime + gracePeriod > currentTime;
       } else {
         // If no period end date but status is active, consider it active
         // This handles admin-created subscriptions without period end

@@ -11,7 +11,8 @@ import {
   FileText,
   Download,
   MessageCircle,
-  Layers
+  Layers,
+  Package
 } from "lucide-react";
 
 import { ActiveTool } from "@/features/editor/types";
@@ -52,6 +53,12 @@ export const Sidebar = ({
           label="Shapes"
           isActive={activeTool === "shapes"}
           onClick={() => onChangeActiveTool("shapes")}
+        />
+        <SidebarItem
+          icon={Package}
+          label="Elements"
+          isActive={activeTool === "elements"}
+          onClick={() => onChangeActiveTool("elements")}
         />
         <SidebarItem
           icon={Pencil}

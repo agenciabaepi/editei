@@ -20,7 +20,9 @@ export const useHotkeys = ({ canvas, undo, redo, save, copy, paste }: UseHotkeys
 
     // delete key - defer render to avoid blocking
     if (event.keyCode === 46) {
-      canvas?.getActiveObjects().forEach((Object) => canvas?.remove(Object));
+      // Filtrar workspace (background fixo) - não pode ser removido
+      const objectsToRemove = canvas?.getActiveObjects().filter((obj: any) => obj.name !== "clip") || [];
+      objectsToRemove.forEach((Object) => canvas?.remove(Object));
       canvas?.discardActiveObject();
       // Use requestAnimationFrame to avoid blocking input
       requestAnimationFrame(() => {
@@ -29,12 +31,16 @@ export const useHotkeys = ({ canvas, undo, redo, save, copy, paste }: UseHotkeys
     }
 
     if (isBackspace) {
-      canvas?.remove(...canvas.getActiveObjects());
-      canvas?.discardActiveObject();
-      // Defer render
-      requestAnimationFrame(() => {
-        canvas?.renderAll();
-      });
+      // Filtrar workspace (background fixo) - não pode ser removido
+      const objectsToRemove = canvas?.getActiveObjects().filter((obj: any) => obj.name !== "clip") || [];
+      if (objectsToRemove.length > 0) {
+        canvas?.remove(...objectsToRemove);
+        canvas?.discardActiveObject();
+        // Defer render
+        requestAnimationFrame(() => {
+          canvas?.renderAll();
+        });
+      }
     }
 
     if (isCtrlKey && event.key === "z") {
@@ -66,7 +72,10 @@ export const useHotkeys = ({ canvas, undo, redo, save, copy, paste }: UseHotkeys
       event.preventDefault();
       canvas?.discardActiveObject();
 
-      const allObjects = canvas?.getObjects().filter((object) => object.selectable);
+      // Filtrar workspace (background fixo) - não pode ser selecionado
+      const allObjects = canvas?.getObjects().filter((object) => 
+        object.selectable && (object as any).name !== "clip"
+      );
 
       canvas?.setActiveObject(new fabric.ActiveSelection(allObjects, { canvas }));
       // Defer render to avoid blocking

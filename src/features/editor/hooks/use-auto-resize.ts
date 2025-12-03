@@ -13,8 +13,13 @@ export const useAutoResize = ({ canvas, container }: UseAutoResizeProps) => {
     const width = container.offsetWidth;
     const height = container.offsetHeight;
 
-    canvas.setWidth(width);
-    canvas.setHeight(height);
+    // Verificar se canvas está inicializado antes de definir dimensões
+    if (canvas && canvas.setWidth && canvas.setHeight) {
+      canvas.setWidth(width);
+      canvas.setHeight(height);
+    } else {
+      return; // Canvas não está pronto, sair
+    }
 
     const center = canvas.getCenter();
     const zoomRatio = 0.85;
@@ -57,6 +62,8 @@ export const useAutoResize = ({ canvas, container }: UseAutoResizeProps) => {
 
     localWorkspace.clone((cloned: fabric.Rect) => {
       canvas.clipPath = cloned;
+      // Garantir que o workspace seja renderizado corretamente
+      localWorkspace.setCoords();
       canvas.requestRenderAll();
     });
   }, [canvas, container]);

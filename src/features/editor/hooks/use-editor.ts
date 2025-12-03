@@ -159,6 +159,12 @@ const buildEditor = ({
         opacity: 1,
         stroke: "#e5e7eb",
         strokeWidth: 1,
+        // Garantir que o workspace seja completamente fixo
+        lockMovementX: true,
+        lockMovementY: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
         shadow: new fabric.Shadow({
           color: "rgba(0,0,0,0.8)",
           blur: 5,
@@ -181,8 +187,19 @@ const buildEditor = ({
       }
       console.log("Workspace recreated as background", workspace);
     } else {
-      // Ensure existing workspace is visible
-      workspace.set({ visible: true, opacity: 1 });
+      // Ensure existing workspace is visible and fixed
+      workspace.set({ 
+        visible: true, 
+        opacity: 1,
+        selectable: false,
+        hasControls: false,
+        evented: false,
+        lockMovementX: true,
+        lockMovementY: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
+      });
       canvas.sendToBack(workspace);
       
       // Remove any existing margin guides
@@ -232,11 +249,20 @@ const buildEditor = ({
       const workspace = ensureWorkspaceExists();
       if (!workspace) return;
       
+      // Garantir que o workspace seja sempre fixo, não selecionável e não movível
       workspace.set({ 
         visible: true, 
         opacity: 1,
         selectable: false,
+        hasControls: false,
         evented: false,
+        hoverCursor: "default",
+        moveCursor: "default",
+        lockMovementX: true,
+        lockMovementY: true,
+        lockRotation: true,
+        lockScalingX: true,
+        lockScalingY: true,
       });
       canvas.sendToBack(workspace);
       if (canvas.getContext && canvas.getContext()) {
@@ -257,6 +283,12 @@ const buildEditor = ({
         new fabric.Point(center.left, center.top),
         Math.min(zoomRatio, 3) // Max zoom 300%
       );
+      // Garantir que o workspace seja renderizado após zoom
+      const workspace = getWorkspace();
+      if (workspace) {
+        workspace.setCoords();
+        canvas.renderAll();
+      }
     },
     zoomOut: () => {
       let zoomRatio = canvas.getZoom();
@@ -266,6 +298,12 @@ const buildEditor = ({
         new fabric.Point(center.left, center.top),
         Math.max(zoomRatio, 0.1) // Min zoom 10%
       );
+      // Garantir que o workspace seja renderizado após zoom
+      const workspace = getWorkspace();
+      if (workspace) {
+        workspace.setCoords();
+        canvas.renderAll();
+      }
     },
     changeSize: (value: { width: number; height: number }) => {
       const workspace = ensureWorkspaceExists();
@@ -305,7 +343,8 @@ const buildEditor = ({
     onCopy: () => copy(),
     onPaste: () => paste(),
     changeImageFilter: (value: string) => {
-      const objects = canvas.getActiveObjects();
+      // Filtrar workspace (background fixo) - não pode ter filtros aplicados
+      const objects = canvas.getActiveObjects().filter((obj: any) => obj.name !== "clip");
       objects.forEach((object) => {
         if (object.type === "image") {
           const imageObject = object as fabric.Image;
@@ -379,7 +418,9 @@ const buildEditor = ({
       }
     },
     delete: () => {
-      canvas.getActiveObjects().forEach((object) => canvas.remove(object));
+      // Filtrar workspace (background fixo) - não pode ser removido
+      const objectsToRemove = canvas.getActiveObjects().filter((obj: any) => obj.name !== "clip");
+      objectsToRemove.forEach((object) => canvas.remove(object));
       canvas.discardActiveObject();
       canvas.renderAll();
     },
@@ -1874,7 +1915,29 @@ export const useEditor = ({
       
       // Add workspace as a visible background object, not clipPath
       // clipPath makes the workspace invisible, preventing background color changes
+      
+      // Garantir que o workspace seja sempre renderizado após mudanças no viewport
+      const ensureWorkspaceRendered = () => {
+        const workspace = initialCanvas.getObjects().find((obj: any) => obj.name === "clip");
+        if (workspace) {
+          // Garantir que o workspace esteja visível e atualizado
+          workspace.set({ visible: true, opacity: 1 });
+          workspace.setCoords();
+        }
+      };
+      
+      // Listener para garantir renderização do workspace quando viewport mudar
+      initialCanvas.on('mouse:wheel', ensureWorkspaceRendered);
+      initialCanvas.on('after:render', ensureWorkspaceRendered);
+      
+      // Renderizar imediatamente após adicionar o workspace
       initialCanvas.renderAll();
+      
+      // Garantir renderização após um pequeno delay para garantir que tudo está pronto
+      setTimeout(() => {
+        ensureWorkspaceRendered();
+        initialCanvas.renderAll();
+      }, 100);
 
       setCanvas(initialCanvas);
       setContainer(initialContainer);

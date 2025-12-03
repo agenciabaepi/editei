@@ -50,13 +50,6 @@ interface NavbarProps {
   onChangeActiveTool: (tool: ActiveTool) => void;
   onShare?: () => void;
   projectName?: string;
-  showFloatingLayers?: boolean;
-  onToggleFloatingLayers?: () => void;
-  layersPosition?: {
-    isVisible: boolean;
-    setVisible: (visible: boolean) => void;
-    config: any;
-  };
 };
 
 export const Navbar = ({
@@ -66,9 +59,6 @@ export const Navbar = ({
   onChangeActiveTool,
   onShare,
   projectName,
-  showFloatingLayers,
-  onToggleFloatingLayers,
-  layersPosition,
 }: NavbarProps) => {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const { shouldBlock, triggerPaywall } = usePaywall();
@@ -375,31 +365,6 @@ export const Navbar = ({
           </div>
         )}
         <div className="ml-auto flex items-center gap-x-4">
-          {layersPosition && (
-            <Hint label={layersPosition.isVisible ? "Hide Layers Panel" : "Show Layers Panel"}>
-              <Button 
-                size="sm" 
-                variant={layersPosition.isVisible ? "default" : "outline"}
-                onClick={() => layersPosition.setVisible(!layersPosition.isVisible)}
-              >
-                <Layers className="size-4 mr-2" />
-                Layers
-              </Button>
-            </Hint>
-          )}
-          {/* Legacy layers toggle for backward compatibility */}
-          {!layersPosition && onToggleFloatingLayers && (
-            <Hint label={showFloatingLayers ? "Hide Layers Panel" : "Show Layers Panel"}>
-              <Button 
-                size="sm" 
-                variant={showFloatingLayers ? "default" : "outline"}
-                onClick={onToggleFloatingLayers}
-              >
-                <Layers className="size-4 mr-2" />
-                Layers
-              </Button>
-            </Hint>
-          )}
           {onShare && (
             <Button 
               size="sm" 

@@ -28,6 +28,19 @@ export const useCanvasEvents = ({
   useEffect(() => {
     if (!canvas) return;
     
+    // Garantir que o workspace seja renderizado quando o viewport mudar
+    const handleViewportChange = () => {
+      const workspace = canvas.getObjects().find((obj: any) => obj.name === "clip");
+      if (workspace) {
+        workspace.setCoords();
+        // Usar requestRenderAll para melhor performance
+        canvas.requestRenderAll();
+      }
+    };
+    
+    // Listener para mudanças no viewport (zoom, pan, etc.)
+    canvas.on('mouse:wheel', handleViewportChange);
+    
     // Use requestAnimationFrame for better performance
     const scheduleSave = () => {
       if (pendingSaveRef.current) return;
@@ -74,33 +87,59 @@ export const useCanvasEvents = ({
     // Throttled save for modifications (very frequent)
     canvas.on("object:modified", throttledModifySave);
     canvas.on("selection:created", (e) => {
-      setSelectedObjects(e.selected || []);
+      // Filtrar workspace (background fixo) da seleção
+      const filtered = (e.selected || []).filter((obj: any) => obj.name !== "clip");
+      setSelectedObjects(filtered);
+      // Se apenas o workspace foi selecionado, limpar seleção
+      if (filtered.length === 0 && (e.selected || []).length > 0) {
+        canvas.discardActiveObject();
+      }
     });
     canvas.on("selection:updated", (e) => {
-      setSelectedObjects(e.selected || []);
+      // Filtrar workspace (background fixo) da seleção
+      const filtered = (e.selected || []).filter((obj: any) => obj.name !== "clip");
+      setSelectedObjects(filtered);
+      // Se apenas o workspace foi selecionado, limpar seleção
+      if (filtered.length === 0 && (e.selected || []).length > 0) {
+        canvas.discardActiveObject();
+      }
     });
     canvas.on("selection:cleared", () => {
       setSelectedObjects([]);
       clearSelectionCallback?.();
     });
+    
+    // Prevenir seleção do workspace
+    canvas.on("mouse:down", (e) => {
+      if (e.target && (e.target as any).name === "clip") {
+        canvas.discardActiveObject();
+        e.e.preventDefault();
+        e.e.stopPropagation();
+      }
+    });
 
     return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-      if (modifyTimeoutRef.current) {
-        clearTimeout(modifyTimeoutRef.current);
-      }
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
       if (canvas) {
+        canvas.off('mouse:wheel', handleViewportChange);
         canvas.off("object:added");
         canvas.off("object:removed");
         canvas.off("object:modified");
         canvas.off("selection:created");
         canvas.off("selection:updated");
         canvas.off("selection:cleared");
+      }
+      const rafId = rafIdRef.current;
+      const modifyTimeout = modifyTimeoutRef.current;
+      const saveTimeout = saveTimeoutRef.current;
+      
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+      if (modifyTimeout) {
+        clearTimeout(modifyTimeout);
+      }
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
       }
     };
   },

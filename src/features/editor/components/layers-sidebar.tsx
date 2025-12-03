@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, DragEvent } from "react";
 import { 
   Eye, 
   EyeOff, 
@@ -12,7 +12,8 @@ import {
   MoreHorizontal,
   Edit2,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  GripVertical
 } from "lucide-react";
 
 import { ActiveTool } from "@/features/editor/types";
@@ -42,7 +43,9 @@ interface LayersSidebarProps {
 
 interface LayerItemProps {
   layer: Layer;
+  index: number;
   isSelected: boolean;
+  isDragging: boolean;
   onSelect: () => void;
   onToggleVisibility: () => void;
   onToggleLock: () => void;
@@ -51,11 +54,17 @@ interface LayerItemProps {
   onBringToFront: () => void;
   onSendToBack: () => void;
   onOpacityChange: (opacity: number) => void;
+  onDragStart: (e: DragEvent, index: number) => void;
+  onDragEnd: () => void;
+  onDragOver: (e: DragEvent) => void;
+  onDrop: (e: DragEvent, dropIndex: number) => void;
 }
 
 const LayerItem = ({
   layer,
+  index,
   isSelected,
+  isDragging,
   onSelect,
   onToggleVisibility,
   onToggleLock,
@@ -63,7 +72,11 @@ const LayerItem = ({
   onRename,
   onBringToFront,
   onSendToBack,
-  onOpacityChange
+  onOpacityChange,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop
 }: LayerItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(layer.name);
@@ -101,13 +114,24 @@ const LayerItem = ({
 
   return (
     <div 
+      draggable
+      onDragStart={(e) => onDragStart(e, index)}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={(e) => onDrop(e, index)}
       className={cn(
-        "group flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer border",
+        "group flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer border transition-all duration-200",
         isSelected && "bg-blue-50 border-blue-200",
-        !isSelected && "border-transparent"
+        !isSelected && "border-transparent",
+        isDragging && "opacity-50 scale-95"
       )}
       onClick={onSelect}
     >
+      {/* Drag Handle */}
+      <div className="cursor-grab active:cursor-grabbing opacity-40 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
+      </div>
+
       {/* Thumbnail */}
       <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-xs overflow-hidden">
         {layer.thumbnail ? (
@@ -211,6 +235,8 @@ export const LayersSidebar = ({
   activeTool,
   onChangeActiveTool,
 }: LayersSidebarProps) => {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  
   const layerManager = useLayers({
     canvas: editor?.canvas,
     onLayerChange: (layers) => {
@@ -224,6 +250,30 @@ export const LayersSidebar = ({
 
   const handleOpacityChange = (layerId: string, value: number[]) => {
     layerManager.updateLayerOpacity(layerId, value[0] / 100);
+  };
+
+  const handleDragStart = (e: DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', index.toString());
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+    
+    layerManager.reorderLayers(draggedIndex, dropIndex);
+    setDraggedIndex(null);
   };
 
   return (
@@ -246,11 +296,13 @@ export const LayersSidebar = ({
               <p className="text-xs">Add text, shapes, or images to see layers</p>
             </div>
           ) : (
-            layerManager.layers.map((layer) => (
+            layerManager.layers.map((layer, index) => (
               <LayerItem
                 key={layer.id}
                 layer={layer}
+                index={index}
                 isSelected={layerManager.selectedLayerId === layer.id}
+                isDragging={draggedIndex === index}
                 onSelect={() => layerManager.selectLayer(layer.id)}
                 onToggleVisibility={() => layerManager.toggleVisibility(layer.id)}
                 onToggleLock={() => layerManager.toggleLock(layer.id)}
@@ -259,6 +311,10 @@ export const LayersSidebar = ({
                 onBringToFront={() => layerManager.bringToFront(layer.id)}
                 onSendToBack={() => layerManager.sendToBack(layer.id)}
                 onOpacityChange={(opacity) => layerManager.updateLayerOpacity(layer.id, opacity)}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
               />
             ))
           )}

@@ -34,16 +34,13 @@ import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 import { TemplateSidebar } from "@/features/editor/components/template-sidebar";
 import { ExportSidebar } from "@/features/editor/components/export-sidebar";
 import { PagesSidebar } from "@/features/editor/components/pages-sidebar";
-import { LayersSidebar } from "@/features/editor/components/layers-sidebar";
-import { FloatingLayersPanel } from "@/features/editor/components/floating-layers-panel";
-import { DraggableLayersPanel } from "@/features/editor/components/draggable-layers-panel-clean";
-import { SidebarLayersPanel } from "@/features/editor/components/sidebar-layers-panel";
-import { useLayersPosition } from "@/features/editor/hooks/use-layers-position";
 import { BorderRadiusSidebar } from "@/features/editor/components/border-radius-sidebar";
 import { ShadowSidebar } from "@/features/editor/components/shadow-sidebar";
 import { GradientSidebar } from "@/features/editor/components/gradient-sidebar";
 import { BackgroundSidebar } from "@/features/editor/components/background-sidebar";
 import { EnhancedDrawSidebar } from "@/features/editor/components/enhanced-draw-sidebar";
+import { LayersSidebar } from "@/features/editor/components/layers-sidebar";
+import { ElementsSidebar } from "@/features/editor/components/elements-sidebar";
 import { ShareDialog } from "@/components/share-dialog";
 import { CommentSystem } from "@/components/comment-system";
 import { CollaboratorCursors } from "@/components/collaborator-cursors";
@@ -61,14 +58,10 @@ export const Editor = ({ initialData }: EditorProps) => {
   const [activeTool, setActiveTool] = useState<ActiveTool>("select");
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [showFloatingLayers, setShowFloatingLayers] = useState(true);
 
   // Check if this is a guest user to disable auto-save
   const isGuest = (initialData as any).isGuest;
   const disableAutoSave = (initialData as any).disableAutoSave;
-
-  // Initialize layers position manager
-  const layersPosition = useLayersPosition();
 
   // Initialize collaboration
   const collaboration = useCollaboration({
@@ -222,24 +215,18 @@ export const Editor = ({ initialData }: EditorProps) => {
           onChangeActiveTool={onChangeActiveTool}
           onShare={() => setShowShareDialog(true)}
           projectName={initialData.name}
-          showFloatingLayers={showFloatingLayers}
-          onToggleFloatingLayers={() => setShowFloatingLayers(!showFloatingLayers)}
-          layersPosition={layersPosition}
         />
         <div className="flex-1 h-[calc(100%-68px)] flex relative">
-        {/* Left Sidebar Layers Panel */}
-        {layersPosition.config.position === 'sidebar-left' && layersPosition.isVisible && (
-          <SidebarLayersPanel 
-            editor={editor} 
-            side="left" 
-            onPositionChange={layersPosition.updatePosition}
-          />
-        )}
         <Sidebar
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
         />
         <ShapeSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
+        <ElementsSidebar
           editor={editor}
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
@@ -324,11 +311,6 @@ export const Editor = ({ initialData }: EditorProps) => {
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
         />
-        <LayersSidebar
-          editor={editor}
-          activeTool={activeTool}
-          onChangeActiveTool={onChangeActiveTool}
-        />
         <BorderRadiusSidebar
           editor={editor}
           activeTool={activeTool}
@@ -354,16 +336,12 @@ export const Editor = ({ initialData }: EditorProps) => {
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
         />
+        <LayersSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
         <main className="bg-muted flex-1 overflow-auto relative flex flex-col">
-          {/* Draggable Layers Panel */}
-          {layersPosition.config.position.startsWith('floating') && layersPosition.isVisible && (
-            <DraggableLayersPanel
-              editor={editor}
-              position={layersPosition.config.position}
-              onPositionChange={layersPosition.updatePosition}
-              onClose={() => layersPosition.setVisible(false)}
-            />
-          )}
           <Toolbar
             editor={editor}
             activeTool={activeTool}
@@ -395,24 +373,6 @@ export const Editor = ({ initialData }: EditorProps) => {
             onReplyToComment={collaboration.replyToComment}
             onResolveComment={collaboration.resolveComment}
             onDeleteComment={collaboration.deleteComment}
-          />
-        )}
-        
-        {/* Right Sidebar Layers Panel */}
-        {layersPosition.config.position === 'sidebar-right' && layersPosition.isVisible && (
-          <SidebarLayersPanel 
-            editor={editor} 
-            side="right" 
-            onPositionChange={layersPosition.updatePosition}
-          />
-        )}
-        
-        {/* Legacy Floating Layers Panel - kept for backward compatibility */}
-        {!layersPosition.isVisible && (
-          <FloatingLayersPanel
-            editor={editor}
-            isVisible={showFloatingLayers}
-            onToggle={() => setShowFloatingLayers(!showFloatingLayers)}
           />
         )}
       </div>

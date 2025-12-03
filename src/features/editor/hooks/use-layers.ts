@@ -22,6 +22,27 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
   const layersRef = useRef<Layer[]>([]);
   const onLayerChangeRef = useRef(onLayerChange);
   
+  // Helper function to safely render canvas
+  const safeRenderAll = useCallback((canvasInstance: fabric.Canvas | undefined) => {
+    if (!canvasInstance) return;
+    
+    try {
+      // Verificar se o canvas está totalmente inicializado
+      if (
+        canvasInstance &&
+        typeof canvasInstance.renderAll === 'function' &&
+        canvasInstance.getContext
+      ) {
+        const ctx = canvasInstance.getContext();
+        if (ctx) {
+          canvasInstance.renderAll();
+        }
+      }
+    } catch (error) {
+      console.warn('Error rendering canvas:', error);
+    }
+  }, []);
+  
   // Update refs when values change
   useEffect(() => {
     layersRef.current = layers;
@@ -138,13 +159,7 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
     try {
       canvas.remove(layer.fabricObject);
       // Safe render after removal with canvas validation
-      if (canvas.getContext && canvas.getContext()) {
-        try {
-          canvas.renderAll();
-        } catch (renderError) {
-          console.warn("Canvas render error after layer removal:", renderError);
-        }
-      }
+      safeRenderAll(canvas);
     } catch (error) {
       console.warn("Error removing layer from canvas:", error);
     }
@@ -158,19 +173,23 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
     if (selectedLayerId === layerId) {
       setSelectedLayerId(null);
     }
-  }, [canvas, layers, selectedLayerId, onLayerChange]);
+  }, [canvas, layers, selectedLayerId, onLayerChange, safeRenderAll]);
 
   // Select layer
   const selectLayer = useCallback((layerId: string) => {
     if (!canvas) return;
 
     const layer = layers.find(l => l.id === layerId);
-    if (!layer || layer.locked) return;
+    if (!layer || layer.locked || !layer.fabricObject) return;
 
-    canvas.setActiveObject(layer.fabricObject);
-    canvas.renderAll();
+    try {
+      canvas.setActiveObject(layer.fabricObject);
+      safeRenderAll(canvas);
+    } catch (error) {
+      console.error('Error selecting layer:', error);
+    }
     setSelectedLayerId(layerId);
-  }, [canvas, layers]);
+  }, [canvas, layers, safeRenderAll]);
 
   // Toggle visibility
   const toggleVisibility = useCallback((layerId: string) => {
@@ -180,12 +199,12 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
       if (layer.id === layerId) {
         const newVisible = !layer.visible;
         layer.fabricObject.set('visible', newVisible);
-        canvas.renderAll();
+        safeRenderAll(canvas);
         return { ...layer, visible: newVisible };
       }
       return layer;
     }));
-  }, [canvas]);
+  }, [canvas, safeRenderAll]);
 
   // Toggle lock
   const toggleLock = useCallback((layerId: string) => {
@@ -198,12 +217,12 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
           selectable: !newLocked,
           evented: !newLocked
         });
-        canvas.renderAll();
+        safeRenderAll(canvas);
         return { ...layer, locked: newLocked };
       }
       return layer;
     }));
-  }, [canvas]);
+  }, [canvas, safeRenderAll]);
 
   // Duplicate layer
   const duplicateLayer = useCallback((layerId: string) => {
@@ -222,9 +241,9 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
       canvas.add(cloned);
       addLayer(cloned, layer.type, `${layer.name} copy`);
       canvas.setActiveObject(cloned);
-      canvas.renderAll();
+      safeRenderAll(canvas);
     });
-  }, [canvas, layers, addLayer]);
+  }, [canvas, layers, addLayer, safeRenderAll]);
 
   // Rename layer
   const renameLayer = useCallback((layerId: string, newName: string) => {
@@ -249,11 +268,11 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
         layer.zIndex = canvasIndex;
       });
 
-      canvas.renderAll();
+      safeRenderAll(canvas);
       onLayerChange?.(newLayers);
       return newLayers;
     });
-  }, [canvas, onLayerChange]);
+  }, [canvas, onLayerChange, safeRenderAll]);
 
   // Refresh layers from canvas
   const refreshLayers = useCallback(() => {
@@ -339,12 +358,12 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
     setLayers(prev => prev.map(layer => {
       if (layer.id === layerId) {
         layer.fabricObject.set('opacity', opacity);
-        canvas.renderAll();
+        safeRenderAll(canvas);
         return { ...layer, opacity };
       }
       return layer;
     }));
-  }, [canvas]);
+  }, [canvas, safeRenderAll]);
 
   // Initialize layers from existing canvas objects - run only once per canvas
   useEffect(() => {
@@ -361,29 +380,34 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
         const newLayers: Layer[] = [];
         const existingNames: string[] = [];
         
-        canvasObjects.forEach((obj, index) => {
-          const fabricObj = obj as FabricObjectWithId;
-          const layerType = getLayerType(obj);
-          const layerName = generateLayerName(layerType, existingNames);
-          existingNames.push(layerName);
-          
-          const layerId = fabricObj.id || uuidv4();
-          fabricObj.id = layerId;
-          
-          const newLayer: Layer = {
-            id: layerId,
-            name: layerName,
-            type: layerType,
-            visible: obj.visible !== false,
-            locked: !obj.selectable,
-            opacity: obj.opacity || 1,
-            fabricObject: obj,
-            thumbnail: generateThumbnail(obj),
-            zIndex: index
-          };
-          
-          newLayers.push(newLayer);
-        });
+      canvasObjects.forEach((obj, index) => {
+        // Ignorar o workspace (background fixo) - não deve aparecer nos layers
+        if ((obj as any).name === "clip") {
+          return;
+        }
+        
+        const fabricObj = obj as FabricObjectWithId;
+        const layerType = getLayerType(obj);
+        const layerName = generateLayerName(layerType, existingNames);
+        existingNames.push(layerName);
+        
+        const layerId = fabricObj.id || uuidv4();
+        fabricObj.id = layerId;
+        
+        const newLayer: Layer = {
+          id: layerId,
+          name: layerName,
+          type: layerType,
+          visible: obj.visible !== false,
+          locked: !obj.selectable,
+          opacity: obj.opacity || 1,
+          fabricObject: obj,
+          thumbnail: generateThumbnail(obj),
+          zIndex: index
+        };
+        
+        newLayers.push(newLayer);
+      });
         
         if (newLayers.length > 0) {
           setLayers(newLayers.sort((a, b) => b.zIndex - a.zIndex));
@@ -398,6 +422,11 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
     
     const handleObjectAdded = (e: fabric.IEvent) => {
       const obj = e.target as FabricObjectWithId;
+      // Ignorar o workspace (background fixo) - não deve aparecer nos layers
+      if (obj && (obj as any).name === "clip") {
+        return;
+      }
+      
       if (obj && !obj.id) {
         setLayers(currentLayers => {
           const existingNames = currentLayers.map(l => l.name);
@@ -452,7 +481,7 @@ export const useLayers = ({ canvas, onLayerChange }: UseLayersProps): LayerManag
 
     const handleObjectModified = () => {
       setLayers(currentLayers => {
-        const canvasObjects = canvas.getObjects();
+        const canvasObjects = canvas.getObjects().filter((obj: any) => obj.name !== "clip");
         const updatedLayers = currentLayers.map(layer => {
           const canvasIndex = canvasObjects.indexOf(layer.fabricObject);
           if (canvasIndex >= 0) {

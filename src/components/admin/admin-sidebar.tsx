@@ -11,7 +11,10 @@ import {
   Settings, 
   Shield,
   Database,
-  Activity
+  Activity,
+  Shapes,
+  Type,
+  FileText
 } from "lucide-react";
 
 const adminRoutes = [
@@ -38,6 +41,24 @@ const adminRoutes = [
     icon: FolderOpen,
     href: "/admin/projects",
     color: "text-orange-700"
+  },
+  {
+    label: "Templates",
+    icon: FileText,
+    href: "/admin/templates",
+    color: "text-orange-500"
+  },
+  {
+    label: "Elements",
+    icon: Shapes,
+    href: "/admin/elements",
+    color: "text-green-500"
+  },
+  {
+    label: "Fonts",
+    icon: Type,
+    href: "/admin/fonts",
+    color: "text-blue-500"
   },
   {
     label: "System",

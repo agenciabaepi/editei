@@ -19,17 +19,20 @@ export const useSnapGuides = ({
   const selectedObjectRef = useRef<fabric.Object | null>(null);
   const isDraggingRef = useRef(false);
   const lastSnapRef = useRef<{ x: boolean; y: boolean }>({ x: false, y: false });
+  const isRenderingRef = useRef(false);
+  const handleAfterRenderRef = useRef<((options: any) => void) | null>(null);
 
   useEffect(() => {
     if (!canvas || !workspace || !enabled) {
       selectedObjectRef.current = null;
+      handleAfterRenderRef.current = null;
       canvas?.renderAll();
       return;
     }
 
     const workspaceRect = workspace as fabric.Rect;
     
-    // Calcular centro absoluto do workspace usando getCenterPoint (método nativo do Fabric.js)
+    // Calcular centro do workspace usando getCenterPoint (considera transformações do viewport)
     const getWorkspaceCenter = () => {
       // getCenterPoint() retorna o centro real considerando todas as transformações
       const centerPoint = workspaceRect.getCenterPoint();
@@ -45,7 +48,7 @@ export const useSnapGuides = ({
 
       const center = getWorkspaceCenter();
       
-      // Usar getCenterPoint() para obter o centro real do objeto
+      // Usar getCenterPoint() para obter o centro real do objeto (considera transformações)
       const objCenter = obj.getCenterPoint();
       
       // Calcular distâncias do centro
@@ -57,9 +60,10 @@ export const useSnapGuides = ({
 
       // Snap horizontal (quando o centro X do objeto está próximo do centro X do workspace)
       if (distX <= snapThreshold) {
-        // Calcular a diferença e ajustar o left
+        // Calcular a diferença e ajustar o left para centralizar
         const diffX = center.x - objCenter.x;
-        obj.set({ left: (obj.left || 0) + diffX });
+        const currentLeft = obj.left || 0;
+        obj.set({ left: currentLeft + diffX });
         snappedX = true;
         lastSnapRef.current.x = true;
       } else {
@@ -68,9 +72,10 @@ export const useSnapGuides = ({
 
       // Snap vertical (quando o centro Y do objeto está próximo do centro Y do workspace)
       if (distY <= snapThreshold) {
-        // Calcular a diferença e ajustar o top
+        // Calcular a diferença e ajustar o top para centralizar
         const diffY = center.y - objCenter.y;
-        obj.set({ top: (obj.top || 0) + diffY });
+        const currentTop = obj.top || 0;
+        obj.set({ top: currentTop + diffY });
         snappedY = true;
         lastSnapRef.current.y = true;
       } else {
@@ -79,79 +84,99 @@ export const useSnapGuides = ({
 
       if (snappedX || snappedY) {
         obj.setCoords();
-        canvas.renderAll();
+        canvas.requestRenderAll();
       }
     };
 
     // Event listener para after:render (desenho nativo)
-    const handleAfterRender = (options: any) => {
-      // Só desenhar guias se houver um objeto selecionado
-      if (!canvas || !workspace || !selectedObjectRef.current) return;
-      
-      // Verificar se o objeto selecionado não é o workspace ou uma margem
-      const selected = selectedObjectRef.current;
-      if (selected === workspace || (selected as any).name === 'margin-guide') {
-        return;
+    // Criar handler apenas uma vez para evitar duplicação
+    if (!handleAfterRenderRef.current) {
+      handleAfterRenderRef.current = (options: any) => {
+        // Prevenir renderização duplicada no mesmo frame
+        if (isRenderingRef.current) return;
+        isRenderingRef.current = true;
+        
+        // Só desenhar guias se houver um objeto selecionado
+        if (!canvas || !workspace || !selectedObjectRef.current) {
+          isRenderingRef.current = false;
+          return;
+        }
+        
+        // Verificar se o objeto selecionado não é o workspace ou uma margem
+        const selected = selectedObjectRef.current;
+        if (selected === workspace || (selected as any).name === 'margin-guide' || (selected as any).name === 'clip') {
+          isRenderingRef.current = false;
+          return;
+        }
+        
+        const ctx = canvas.getContext();
+        if (!ctx) {
+          isRenderingRef.current = false;
+          return;
+        }
+        
+        // Calcular centro visual do workspace
+        const center = getWorkspaceCenter();
+        const centerX = center.x;
+        const centerY = center.y;
+        
+        const extension = 2000; // Estender muito além do workspace
+
+        // Aplicar transformação do viewport para desenhar corretamente
+        const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+        ctx.save();
+        ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
+        
+        // Configurar estilo das guias (rosa neon como Canva) - mais finas
+        ctx.strokeStyle = '#ff00ff'; // Rosa neon vibrante
+        ctx.lineWidth = 0.5; // Linha mais fina
+        ctx.setLineDash([]); // Linha lisa (sem tracejado)
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = 'transparent'; // Remover sombra para evitar blur/duplicação
+        ctx.shadowBlur = 0;
+        ctx.lineCap = 'butt'; // Evitar extensões nas pontas
+
+        // Desenhar linha vertical central (centro X do workspace branco)
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - extension);
+        ctx.lineTo(centerX, centerY + extension);
+        ctx.stroke();
+
+        // Desenhar linha horizontal central (centro Y do workspace branco)
+        ctx.beginPath();
+        ctx.moveTo(centerX - extension, centerY);
+        ctx.lineTo(centerX + extension, centerY);
+        ctx.stroke();
+
+        ctx.restore();
+        
+        // Reset flag no próximo frame
+        requestAnimationFrame(() => {
+          isRenderingRef.current = false;
+        });
+      };
+    }
+    
+    const handleAfterRender = handleAfterRenderRef.current;
+
+    // Função unificada para atualizar o objeto selecionado
+    const updateSelectedObject = () => {
+      const activeObject = canvas.getActiveObject();
+      if (activeObject && activeObject !== workspace && (activeObject as any).name !== 'margin-guide' && (activeObject as any).name !== 'clip') {
+        selectedObjectRef.current = activeObject;
+      } else {
+        selectedObjectRef.current = null;
       }
-      
-      const ctx = canvas.getContext();
-      const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-      
-      // Usar getCenterPoint() para obter o centro real do workspace
-      const center = getWorkspaceCenter();
-      const centerX = center.x;
-      const centerY = center.y;
-      
-      const extension = 2000; // Estender muito além do workspace
-
-      // Aplicar transformação do viewport para desenhar corretamente
-      ctx.save();
-      ctx.transform(vpt[0], vpt[1], vpt[2], vpt[3], vpt[4], vpt[5]);
-
-      // Configurar estilo das guias (rosa neon como Canva) - mais finas
-      ctx.strokeStyle = '#ff00ff'; // Rosa neon vibrante
-      ctx.lineWidth = 0.5; // Linha mais fina
-      ctx.setLineDash([]); // Linha lisa (sem tracejado)
-      ctx.globalAlpha = 1;
-      ctx.shadowColor = '#ff00ff';
-      ctx.shadowBlur = 2;
-
-      // Desenhar linha vertical central (centro X do workspace branco)
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY - extension);
-      ctx.lineTo(centerX, centerY + extension);
-      ctx.stroke();
-
-      // Desenhar linha horizontal central (centro Y do workspace branco)
-      ctx.beginPath();
-      ctx.moveTo(centerX - extension, centerY);
-      ctx.lineTo(centerX + extension, centerY);
-      ctx.stroke();
-
-      ctx.restore();
+      canvas.requestRenderAll();
     };
 
     // Detectar seleção de objeto
     const handleSelectionCreated = (e: fabric.IEvent) => {
-      const selected = e.selected?.[0] || e.target;
-      if (!selected || selected === workspace || (selected as any).name === 'margin-guide') {
-        selectedObjectRef.current = null;
-        canvas.renderAll();
-        return;
-      }
-      selectedObjectRef.current = selected as fabric.Object;
-      canvas.renderAll();
+      updateSelectedObject();
     };
 
     const handleSelectionUpdated = (e: fabric.IEvent) => {
-      const selected = e.selected?.[0] || e.target;
-      if (!selected || selected === workspace || (selected as any).name === 'margin-guide') {
-        selectedObjectRef.current = null;
-        canvas.renderAll();
-        return;
-      }
-      selectedObjectRef.current = selected as fabric.Object;
-      canvas.renderAll();
+      updateSelectedObject();
     };
 
     const handleObjectMoving = (e: fabric.IEvent) => {
@@ -178,7 +203,7 @@ export const useSnapGuides = ({
       canvas.renderAll();
     };
 
-    // Registrar eventos
+    // Registrar eventos - usar apenas os necessários para evitar duplicação
     canvas.on('after:render', handleAfterRender);
     canvas.on('selection:created', handleSelectionCreated);
     canvas.on('selection:updated', handleSelectionUpdated);
@@ -187,7 +212,9 @@ export const useSnapGuides = ({
     canvas.on('selection:cleared', handleSelectionCleared);
 
     return () => {
-      canvas.off('after:render', handleAfterRender);
+      if (handleAfterRenderRef.current) {
+        canvas.off('after:render', handleAfterRenderRef.current);
+      }
       canvas.off('selection:created', handleSelectionCreated);
       canvas.off('selection:updated', handleSelectionUpdated);
       canvas.off('object:moving', handleObjectMoving);
@@ -195,6 +222,7 @@ export const useSnapGuides = ({
       canvas.off('selection:cleared', handleSelectionCleared);
       selectedObjectRef.current = null;
       lastSnapRef.current = { x: false, y: false };
+      handleAfterRenderRef.current = null;
     };
   }, [canvas, workspace, enabled, margin, snapThreshold]);
 

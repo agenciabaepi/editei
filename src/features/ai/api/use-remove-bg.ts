@@ -33,7 +33,9 @@ export const useRemoveBg = () => {
         console.log('[useRemoveBg] Processing with @imgly/background-removal (model: isnet)...');
         const resultBlob = await removeBackground(blob, {
           model: 'isnet', // 'isnet' = melhor qualidade possível
-          outputFormat: 'image/png',
+          output: {
+            format: 'image/png',
+          },
         });
 
         // Converte resultado para data URL

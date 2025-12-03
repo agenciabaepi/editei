@@ -68,12 +68,23 @@ export const usePageManager = ({
 
   // Generate thumbnail for page
   const generateThumbnail = useCallback((canvas: fabric.Canvas): string => {
-    const scale = 0.2; // 20% scale for thumbnail
-    return canvas.toDataURL({
-      format: 'png',
-      quality: 0.8,
-      multiplier: scale,
-    });
+    try {
+      const scale = 0.2; // 20% scale for thumbnail
+      return canvas.toDataURL({
+        format: 'png',
+        quality: 0.8,
+        multiplier: scale,
+      });
+    } catch (error: any) {
+      // Handle "Tainted canvas" error (CORS issue with cross-origin images)
+      if (error.name === 'SecurityError' || error.message?.includes('Tainted canvases')) {
+        console.warn('Cannot generate thumbnail due to CORS restrictions. Using placeholder.');
+        // Return a transparent 1x1 PNG as placeholder
+        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }, []);
 
   // Add new page
@@ -387,8 +398,14 @@ export const usePageManager = ({
         if (currentPage && !currentPage.isLocked) {
           // Generate thumbnail asynchronously
           requestAnimationFrame(() => {
-            const thumbnail = generateThumbnail(editor.canvas);
-            updatePageThumbnail(state.currentPageId, thumbnail);
+            try {
+              const thumbnail = generateThumbnail(editor.canvas);
+              updatePageThumbnail(state.currentPageId, thumbnail);
+            } catch (error) {
+              console.error('Failed to generate thumbnail:', error);
+              // Use placeholder on error
+              updatePageThumbnail(state.currentPageId, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+            }
           });
         }
         thumbnailTimeout = null;

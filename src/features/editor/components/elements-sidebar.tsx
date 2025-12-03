@@ -168,6 +168,8 @@ export const ElementsSidebar = ({
           editor.canvas.add(img);
           editor.canvas.setActiveObject(img);
           editor.canvas.renderAll();
+        }, {
+          crossOrigin: "anonymous",
         });
       } 
       // Para modelos 3D (GLB, GLTF) - por enquanto, mostraremos um placeholder

@@ -36,6 +36,10 @@ const nextConfig = {
         hostname: "replicate.delivery",
       },
       {
+        protocol: "https",
+        hostname: "editei.com.br",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
       },

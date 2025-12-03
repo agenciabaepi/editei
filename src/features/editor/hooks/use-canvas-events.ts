@@ -87,34 +87,50 @@ export const useCanvasEvents = ({
     // Throttled save for modifications (very frequent)
     canvas.on("object:modified", throttledModifySave);
     canvas.on("selection:created", (e) => {
+      const activeObject = canvas.getActiveObject();
       // Filtrar workspace (background fixo) da seleção
-      const filtered = (e.selected || []).filter((obj: any) => obj.name !== "clip");
-      setSelectedObjects(filtered);
-      // Se apenas o workspace foi selecionado, limpar seleção
-      if (filtered.length === 0 && (e.selected || []).length > 0) {
+      if (activeObject && (activeObject as any).name === "clip") {
         canvas.discardActiveObject();
+        setSelectedObjects([]);
+        return;
       }
+      const filtered = (e.selected || []).filter((obj: any) => obj.name !== "clip" && obj.name !== "margin-guide");
+      setSelectedObjects(filtered);
     });
     canvas.on("selection:updated", (e) => {
+      const activeObject = canvas.getActiveObject();
       // Filtrar workspace (background fixo) da seleção
-      const filtered = (e.selected || []).filter((obj: any) => obj.name !== "clip");
-      setSelectedObjects(filtered);
-      // Se apenas o workspace foi selecionado, limpar seleção
-      if (filtered.length === 0 && (e.selected || []).length > 0) {
+      if (activeObject && (activeObject as any).name === "clip") {
         canvas.discardActiveObject();
+        setSelectedObjects([]);
+        return;
       }
+      const filtered = (e.selected || []).filter((obj: any) => obj.name !== "clip" && obj.name !== "margin-guide");
+      setSelectedObjects(filtered);
     });
     canvas.on("selection:cleared", () => {
       setSelectedObjects([]);
       clearSelectionCallback?.();
     });
     
-    // Prevenir seleção do workspace
+    // Prevenir seleção do workspace - apenas se não houver outros objetos por cima
     canvas.on("mouse:down", (e) => {
       if (e.target && (e.target as any).name === "clip") {
-        canvas.discardActiveObject();
-        e.e.preventDefault();
-        e.e.stopPropagation();
+        // Verificar se há objetos por cima do ponto clicado
+        const pointer = canvas.getPointer(e.e);
+        const objectsAtPoint = canvas.getObjects().filter((obj: any) => {
+          if (obj.name === "clip" || obj.name === "margin-guide") return false;
+          const objBounds = obj.getBoundingRect();
+          return pointer.x >= objBounds.left && 
+                 pointer.x <= objBounds.left + objBounds.width &&
+                 pointer.y >= objBounds.top && 
+                 pointer.y <= objBounds.top + objBounds.height;
+        });
+        
+        // Se não há objetos por cima, descartar seleção
+        if (objectsAtPoint.length === 0) {
+          canvas.discardActiveObject();
+        }
       }
     });
 
@@ -127,19 +143,16 @@ export const useCanvasEvents = ({
         canvas.off("selection:created");
         canvas.off("selection:updated");
         canvas.off("selection:cleared");
+        canvas.off("mouse:down");
       }
       const rafId = rafIdRef.current;
       const modifyTimeout = modifyTimeoutRef.current;
-      const saveTimeout = saveTimeoutRef.current;
       
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
       if (modifyTimeout) {
         clearTimeout(modifyTimeout);
-      }
-      if (saveTimeout) {
-        clearTimeout(saveTimeout);
       }
     };
   },

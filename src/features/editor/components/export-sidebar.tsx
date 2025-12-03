@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Download, Image, FileText, Layers, Settings } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Download, Image, FileText, Layers, Settings, Crown } from "lucide-react";
 import jsPDF from "jspdf";
 
 import { ExportFormat, ExportOptions, EXPORT_FORMATS, getFormatsByCategory } from "@/features/editor/constants/export-formats";
@@ -44,13 +44,58 @@ export const ExportSidebar = ({
   const [customWidth, setCustomWidth] = useState<string>("");
   const [customHeight, setCustomHeight] = useState<string>("");
   const [maintainAspectRatio, setMaintainAspectRatio] = useState<boolean>(true);
-  const [quality, setQuality] = useState<number>(90);
+  const [quality, setQuality] = useState<number>(80);
   const [scale, setScale] = useState<number>(1);
 
   const pageContext = usePageContext();
   const workspace = editor?.getWorkspace();
   const originalWidth = workspace?.width ?? 0;
   const originalHeight = workspace?.height ?? 0;
+
+  // Calcular dimensões de exportação
+  const exportWidth = useMemo(() => {
+    if (customWidth) return parseInt(customWidth) || originalWidth;
+    return Math.round(originalWidth * scale);
+  }, [customWidth, originalWidth, scale]);
+
+  const exportHeight = useMemo(() => {
+    if (customHeight) return parseInt(customHeight) || originalHeight;
+    return Math.round(originalHeight * scale);
+  }, [customHeight, originalHeight, scale]);
+
+  // Estimar tamanho do arquivo (aproximado)
+  const estimatedFileSize = useMemo(() => {
+    const pixels = exportWidth * exportHeight;
+    let bytesPerPixel = 4; // RGBA
+    
+    if (selectedFormat.id === 'jpg') {
+      bytesPerPixel = (quality / 100) * 0.5; // JPEG é mais compacto
+    } else if (selectedFormat.id === 'webp') {
+      bytesPerPixel = (quality / 100) * 0.3;
+    } else if (selectedFormat.id === 'png') {
+      bytesPerPixel = 4; // PNG sem compressão
+    }
+    
+    const estimatedBytes = pixels * bytesPerPixel;
+    
+    if (estimatedBytes < 1024) {
+      return `${Math.round(estimatedBytes)} B`;
+    } else if (estimatedBytes < 1024 * 1024) {
+      return `${(estimatedBytes / 1024).toFixed(2)} KB`;
+    } else {
+      return `${(estimatedBytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+  }, [exportWidth, exportHeight, quality, selectedFormat.id]);
+
+  // Determinar tamanho do arquivo (pequeno, médio, grande)
+  const fileSizeLabel = useMemo(() => {
+    const pixels = exportWidth * exportHeight;
+    const size = pixels * (quality / 100);
+    
+    if (size < 500000) return "pequeno";
+    if (size < 2000000) return "médio";
+    return "grande";
+  }, [exportWidth, exportHeight, quality]);
 
   const handleExport = async () => {
     if (!editor) return;
@@ -63,7 +108,7 @@ export const ExportSidebar = ({
 
     const exportOptions: ExportOptions = {
       format: selectedFormat,
-      quality: selectedFormat.quality ? quality / 100 : undefined,
+      quality: (selectedFormat.id === 'jpg' || selectedFormat.id === 'webp') ? quality / 100 : undefined,
       scale,
       width: customWidth ? parseInt(customWidth) : undefined,
       height: customHeight ? parseInt(customHeight) : undefined,
@@ -77,7 +122,7 @@ export const ExportSidebar = ({
         case 'png':
           dataUrl = editor.canvas.toDataURL({
             format: 'png',
-            quality: 1,
+            quality: 1, // PNG sempre usa qualidade máxima
             multiplier: scale,
             enableRetinaScaling: false,
             withoutTransform: false,
@@ -263,176 +308,196 @@ export const ExportSidebar = ({
       )}
     >
       <ToolSidebarHeader
-        title="Export Design"
-        description="Download your design in various formats"
+        title="Baixar"
+        description="Exporte seu design em vários formatos"
       />
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
-          {/* Format Selection */}
+          {/* Formato de arquivo */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Export Format</Label>
-            <Tabs defaultValue="image" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="image" className="text-xs">
-                  <Image className="h-3 w-3 mr-1" />
-                  Image
-                </TabsTrigger>
-                <TabsTrigger value="vector" className="text-xs">
-                  <Layers className="h-3 w-3 mr-1" />
-                  Vector
-                </TabsTrigger>
-                <TabsTrigger value="document" className="text-xs">
-                  <FileText className="h-3 w-3 mr-1" />
-                  Document
-                </TabsTrigger>
-              </TabsList>
-
-              {(['image', 'vector', 'document'] as const).map((category) => (
-                <TabsContent key={category} value={category} className="mt-3">
-                  <div className="space-y-2">
-                    {getFormatsByCategory(category).map((format) => (
-                      <Button
-                        key={format.id}
-                        variant={selectedFormat.id === format.id ? "default" : "outline"}
-                        className="w-full justify-start h-auto p-3"
-                        onClick={() => {
-                          if (format.requiresPro && !isPro) {
-                            triggerPaywall();
-                            return;
-                          }
-                          setSelectedFormat(format);
-                          setExportOptions(prev => ({ ...prev, format }));
-                        }}
-                      >
-                        <div className="text-left">
-                          <div className="font-medium flex items-center gap-2">
-                            {format.name}
-                            {format.requiresPro && !isPro && (
-                              <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded">
-                                Pro
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {format.description}
-                          </div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+            <Label className="text-sm font-medium">Formato de arquivo</Label>
+            <Select 
+              value={selectedFormat.id} 
+              onValueChange={(value) => {
+                const format = EXPORT_FORMATS.find(f => f.id === value);
+                if (format) {
+                  if (format.requiresPro && !isPro) {
+                    triggerPaywall();
+                    return;
+                  }
+                  handleFormatSelect(format);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <div className="flex items-center gap-2">
+                  {selectedFormat.category === 'image' && <Image className="h-4 w-4" />}
+                  {selectedFormat.category === 'vector' && <Layers className="h-4 w-4" />}
+                  {selectedFormat.category === 'document' && <FileText className="h-4 w-4" />}
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {EXPORT_FORMATS.map((format) => (
+                  <SelectItem 
+                    key={format.id} 
+                    value={format.id}
+                  >
+                    <div className="flex items-center gap-2">
+                      {format.name}
+                      {format.requiresPro && !isPro && (
+                        <Crown className="h-3 w-3 text-yellow-500" />
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Quality Settings */}
-          {selectedFormat.quality && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Quality</Label>
-              <div className="space-y-2">
+          {/* Tamanho */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Tamanho</Label>
+              {scale > 2 && !isPro && (
+                <Crown className="h-4 w-4 text-gray-400" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
                 <Slider
-                  value={[quality]}
-                  onValueChange={(value) => setQuality(value[0])}
-                  max={100}
-                  min={10}
-                  step={5}
-                  className="w-full"
+                  value={[scale]}
+                  onValueChange={(value) => {
+                    const newScale = value[0];
+                    if (newScale > 2 && !isPro) {
+                      triggerPaywall();
+                      return;
+                    }
+                    setScale(newScale);
+                  }}
+                  max={isPro ? 5 : 2}
+                  min={0.25}
+                  step={0.125}
+                  className="flex-1"
                 />
+                <div className="flex items-center gap-1 w-20">
+                  <Input
+                    type="number"
+                    value={scale.toFixed(3)}
+                    onChange={(e) => {
+                      const newScale = parseFloat(e.target.value) || 1;
+                      if (newScale > 2 && !isPro) {
+                        triggerPaywall();
+                        return;
+                      }
+                      if (newScale >= 0.25 && newScale <= (isPro ? 5 : 2)) {
+                        setScale(newScale);
+                      }
+                    }}
+                    className="h-8 w-16 text-sm text-center"
+                    step="0.125"
+                    min="0.25"
+                    max={isPro ? "5" : "2"}
+                  />
+                  {scale > 2 && !isPro && (
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                  )}
+                </div>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {exportWidth.toLocaleString()} px × {exportHeight.toLocaleString()} px
+              </div>
+            </div>
+          </div>
+
+          {/* Qualidade */}
+          {(selectedFormat.id === 'jpg' || selectedFormat.id === 'webp') && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Qualidade</Label>
+                {quality > 80 && !isPro && (
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                )}
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Slider
+                    value={[quality]}
+                    onValueChange={(value) => {
+                      const newQuality = value[0];
+                      if (newQuality > 80 && !isPro) {
+                        triggerPaywall();
+                        return;
+                      }
+                      setQuality(newQuality);
+                    }}
+                    max={isPro ? 100 : 80}
+                    min={10}
+                    step={5}
+                    className="flex-1"
+                  />
+                  <div className="flex items-center gap-1 w-20">
+                    <Input
+                      type="number"
+                      value={quality}
+                      onChange={(e) => {
+                        const newQuality = parseInt(e.target.value) || 80;
+                        if (newQuality > 80 && !isPro) {
+                          triggerPaywall();
+                          return;
+                        }
+                        if (newQuality >= 10 && newQuality <= (isPro ? 100 : 80)) {
+                          setQuality(newQuality);
+                        }
+                      }}
+                      className="h-8 w-16 text-sm text-center"
+                      step="5"
+                      min="10"
+                      max={isPro ? "100" : "80"}
+                    />
+                    {quality > 80 && !isPro && (
+                      <Crown className="h-4 w-4 text-yellow-500" />
+                    )}
+                  </div>
+                </div>
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Low (10%)</span>
-                  <span>{quality}%</span>
-                  <span>High (100%)</span>
+                  <span>Baixa (10%)</span>
+                  <span>Alta ({isPro ? '100%' : '80%'})</span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Scale Settings */}
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Scale</Label>
-            <Select value={scale.toString()} onValueChange={(value) => setScale(parseFloat(value))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0.5">0.5x (50%)</SelectItem>
-                <SelectItem value="1">1x (100%)</SelectItem>
-                <SelectItem value="1.5">1.5x (150%)</SelectItem>
-                <SelectItem value="2">2x (200%)</SelectItem>
-                <SelectItem value="3">3x (300%)</SelectItem>
-                <SelectItem value="4">4x (400%)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Custom Dimensions */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Custom Size</Label>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={maintainAspectRatio}
-                  onCheckedChange={setMaintainAspectRatio}
-                />
-                <Label className="text-xs">Lock aspect ratio</Label>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Width</Label>
-                <Input
-                  type="number"
-                  placeholder={originalWidth.toString()}
-                  value={customWidth}
-                  onChange={(e) => handleCustomWidthChange(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Height</Label>
-                <Input
-                  type="number"
-                  placeholder={originalHeight.toString()}
-                  value={customHeight}
-                  onChange={(e) => handleCustomHeightChange(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Background Settings */}
           {selectedFormat.supportsTransparency && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Include Background</Label>
+                <Label className="text-sm font-medium">Incluir Fundo</Label>
                 <Switch
                   checked={includeBackground}
                   onCheckedChange={setIncludeBackground}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Turn off to export with transparent background
+                Desative para exportar com fundo transparente
               </p>
             </div>
           )}
 
-          {/* Export Info */}
-          <div className="bg-muted p-3 rounded-lg space-y-2">
-            <h4 className="text-sm font-medium">Export Details</h4>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div>Format: {selectedFormat.name} (.{selectedFormat.extension})</div>
-              <div>Original: {originalWidth} × {originalHeight}px</div>
-              <div>
-                Export: {customWidth || Math.round(originalWidth * scale)} × {customHeight || Math.round(originalHeight * scale)}px
-              </div>
-              {selectedFormat.quality && <div>Quality: {quality}%</div>}
-              <div>Scale: {scale}x</div>
+          {/* Tamanho do arquivo */}
+          <div className="bg-muted p-3 rounded-lg">
+            <div className="text-sm text-muted-foreground">
+              Tamanho do arquivo: <span className="font-medium text-foreground">{fileSizeLabel}</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Estimado: ~{estimatedFileSize}
             </div>
           </div>
 
           {/* Export Button */}
           <Button onClick={handleExport} className="w-full" size="lg">
             <Download className="h-4 w-4 mr-2" />
-            Export {selectedFormat.name}
+            Baixar {selectedFormat.name}
           </Button>
         </div>
       </ScrollArea>

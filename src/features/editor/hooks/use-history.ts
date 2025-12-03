@@ -58,38 +58,39 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
           const workspaceRect = workspace as fabric.Rect;
           if (workspaceRect && width > 0 && height > 0 && canvas) {
             // Save current viewport transform
-            const vpt = canvas.viewportTransform;
-            // Reset viewport for thumbnail generation
-            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            const vpt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0];
             
-            // Generate thumbnail at 40% scale for better quality
+            // Generate thumbnail without resetting viewport (to avoid zoom issues)
+            // Use current viewport and just scale down
             const scale = 0.4;
             const thumbnailOptions = {
               format: 'png',
               quality: 1.0, // Maximum quality
               multiplier: scale,
-              left: workspaceRect.left || 0,
-              top: workspaceRect.top || 0,
-              width: width,
-              height: height,
             };
             
-            const thumbnail = canvas.toDataURL(thumbnailOptions);
-            lastThumbnailTime.current = Date.now();
-            
-            // Restore viewport transform
-            if (vpt) {
-              canvas.setViewportTransform(vpt);
+            let thumbnail: string;
+            try {
+              thumbnail = canvas.toDataURL(thumbnailOptions);
+              lastThumbnailTime.current = Date.now();
+              
+              // Update with thumbnail asynchronously
+              saveCallback?.({ json, height, width, thumbnail });
+            } catch (thumbnailError: any) {
+              // Handle "Tainted canvas" error
+              if (thumbnailError.name === 'SecurityError' || thumbnailError.message?.includes('Tainted canvases')) {
+                console.warn('Cannot generate thumbnail due to CORS restrictions.');
+                // Continue without thumbnail
+              } else {
+                console.error('Error generating thumbnail:', thumbnailError);
+              }
             }
-            
-            // Update with thumbnail asynchronously
-            saveCallback?.({ json, height, width, thumbnail });
           }
         } catch (error) {
-          console.error('Error generating thumbnail:', error);
+          console.error('Error in thumbnail generation process:', error);
           // Continue without thumbnail if generation fails
         }
-      }, 0); // Use setTimeout(0) to defer to next event loop tick
+      }, 100); // Small delay to avoid blocking
     }
   }, 
   [

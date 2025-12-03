@@ -70,18 +70,44 @@ export const useAutoResize = ({ canvas, container }: UseAutoResizeProps) => {
 
   useEffect(() => {
     let resizeObserver: ResizeObserver | null = null;
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    let isInitialized = false;
 
     if (canvas && container) {
-      resizeObserver = new ResizeObserver(() => {
-        autoZoom();
-      });
+      // Only auto-zoom on initial mount, not on every resize
+      const handleResize = () => {
+        // Clear any pending resize
+        if (resizeTimeout) {
+          clearTimeout(resizeTimeout);
+        }
+        
+        // Only auto-zoom on initial load, not on every resize
+        if (!isInitialized) {
+          resizeTimeout = setTimeout(() => {
+            autoZoom();
+            isInitialized = true;
+          }, 100);
+        }
+      };
 
+      resizeObserver = new ResizeObserver(handleResize);
       resizeObserver.observe(container);
+      
+      // Initial zoom after a short delay
+      setTimeout(() => {
+        if (!isInitialized) {
+          autoZoom();
+          isInitialized = true;
+        }
+      }, 200);
     }
 
     return () => {
       if (resizeObserver) {
         resizeObserver.disconnect();
+      }
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
       }
     };
   }, [canvas, container, autoZoom]);

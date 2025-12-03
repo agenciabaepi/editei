@@ -63,22 +63,15 @@ const nextConfig = {
         type: 'asset/resource',
       });
       
-      // Configurar Terser para excluir arquivos .mjs (contêm import.meta)
-      // Isso evita erros de sintaxe durante a minificação
-      if (config.optimization) {
-        config.optimization.minimizer = config.optimization.minimizer || [];
-        const TerserPlugin = require('terser-webpack-plugin');
-        const terserIndex = config.optimization.minimizer.findIndex(
-          plugin => plugin && plugin.constructor && plugin.constructor.name === 'TerserPlugin'
-        );
-        if (terserIndex !== -1) {
-          const existingOptions = config.optimization.minimizer[terserIndex].options || {};
-          config.optimization.minimizer[terserIndex] = new TerserPlugin({
-            ...existingOptions,
-            exclude: /\.mjs$/,
-          });
-        }
-      }
+      // Tratar arquivos .mjs do onnxruntime-web como assets estáticos
+      // Isso evita que sejam processados pelo Terser (que causa erros com import.meta)
+      config.module.rules.push({
+        test: /node_modules[\\/]onnxruntime-web[\\/].*\.mjs$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'static/chunks/[name].[hash][ext]',
+        },
+      });
     } else {
       // Server-side: Ensure bcryptjs is external and not bundled
       config.externals = config.externals || [];

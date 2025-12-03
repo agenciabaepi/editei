@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Desabilitar SWC minify para arquivos .mjs (causa problemas com import.meta)
+  swcMinify: false,
+  
   // Headers necessários para WebAssembly
   async headers() {
     return [
@@ -59,6 +62,23 @@ const nextConfig = {
         test: /\.wasm$/,
         type: 'asset/resource',
       });
+      
+      // Configurar Terser para excluir arquivos .mjs (contêm import.meta)
+      // Isso evita erros de sintaxe durante a minificação
+      if (config.optimization) {
+        config.optimization.minimizer = config.optimization.minimizer || [];
+        const TerserPlugin = require('terser-webpack-plugin');
+        const terserIndex = config.optimization.minimizer.findIndex(
+          plugin => plugin && plugin.constructor && plugin.constructor.name === 'TerserPlugin'
+        );
+        if (terserIndex !== -1) {
+          const existingOptions = config.optimization.minimizer[terserIndex].options || {};
+          config.optimization.minimizer[terserIndex] = new TerserPlugin({
+            ...existingOptions,
+            exclude: /\.mjs$/,
+          });
+        }
+      }
     } else {
       // Server-side: Ensure bcryptjs is external and not bundled
       config.externals = config.externals || [];

@@ -28,11 +28,11 @@ export const useRemoveBg = () => {
         const response = await fetch(request.image);
         const blob = await response.blob();
 
-        // Processa diretamente no navegador com modelo 'large' para melhor qualidade
+        // Processa diretamente no navegador com modelo 'isnet' para melhor qualidade
         // O @imgly/background-removal inicializa onnxruntime-web automaticamente
-        console.log('[useRemoveBg] Processing with @imgly/background-removal (model: large)...');
+        console.log('[useRemoveBg] Processing with @imgly/background-removal (model: isnet)...');
         const resultBlob = await removeBackground(blob, {
-          model: 'large', // 'large' = melhor qualidade possível
+          model: 'isnet', // 'isnet' = melhor qualidade possível
           outputFormat: 'image/png',
         });
 

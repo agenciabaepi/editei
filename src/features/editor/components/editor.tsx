@@ -117,7 +117,7 @@ export const Editor = ({ initialData }: EditorProps) => {
           console.log('[AutoSave] Save disabled (guest user)');
         }
       },
-      500 // 500ms debounce (original timing)
+      800 // 800ms debounce to reduce API calls and improve performance
     );
 
     // Cleanup on unmount only

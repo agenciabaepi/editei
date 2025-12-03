@@ -45,49 +45,52 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
     const height = workspace?.height || 0;
     const width = workspace?.width || 0;
 
-    // Generate thumbnail only if enough time has passed (to avoid blocking)
-    // Only generate thumbnail every 3 seconds to reduce load
-    let thumbnail: string | undefined;
-    const now = Date.now();
-    
-    // Only generate thumbnail if enough time has passed
-    if (now - lastThumbnailTime.current > THUMBNAIL_INTERVAL) {
-      try {
-        const workspaceRect = workspace as fabric.Rect;
-        if (workspaceRect && width > 0 && height > 0) {
-          // Save current viewport transform
-          const vpt = canvas.viewportTransform;
-          // Reset viewport for thumbnail generation
-          canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-          
-          // Generate thumbnail at 40% scale for better quality
-          const scale = 0.4;
-          const thumbnailOptions = {
-            format: 'png',
-            quality: 1.0, // Maximum quality
-            multiplier: scale,
-            left: workspaceRect.left || 0,
-            top: workspaceRect.top || 0,
-            width: width,
-            height: height,
-          };
-          
-          thumbnail = canvas.toDataURL(thumbnailOptions);
-          lastThumbnailTime.current = now;
-          
-          // Restore viewport transform
-          if (vpt) {
-            canvas.setViewportTransform(vpt);
-          }
-        }
-      } catch (error) {
-        console.error('Error generating thumbnail:', error);
-        // Continue without thumbnail if generation fails
-      }
-    }
+    // Save immediately without thumbnail (non-blocking)
+    saveCallback?.({ json, height, width });
 
-    // Save immediately (with or without thumbnail)
-    saveCallback?.({ json, height, width, thumbnail });
+    // Generate thumbnail asynchronously to avoid blocking UI
+    // Only generate thumbnail every 3 seconds to reduce load
+    const now = Date.now();
+    if (now - lastThumbnailTime.current > THUMBNAIL_INTERVAL) {
+      // Use setTimeout with low priority to avoid blocking
+      setTimeout(() => {
+        try {
+          const workspaceRect = workspace as fabric.Rect;
+          if (workspaceRect && width > 0 && height > 0 && canvas) {
+            // Save current viewport transform
+            const vpt = canvas.viewportTransform;
+            // Reset viewport for thumbnail generation
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            
+            // Generate thumbnail at 40% scale for better quality
+            const scale = 0.4;
+            const thumbnailOptions = {
+              format: 'png',
+              quality: 1.0, // Maximum quality
+              multiplier: scale,
+              left: workspaceRect.left || 0,
+              top: workspaceRect.top || 0,
+              width: width,
+              height: height,
+            };
+            
+            const thumbnail = canvas.toDataURL(thumbnailOptions);
+            lastThumbnailTime.current = Date.now();
+            
+            // Restore viewport transform
+            if (vpt) {
+              canvas.setViewportTransform(vpt);
+            }
+            
+            // Update with thumbnail asynchronously
+            saveCallback?.({ json, height, width, thumbnail });
+          }
+        } catch (error) {
+          console.error('Error generating thumbnail:', error);
+          // Continue without thumbnail if generation fails
+        }
+      }, 0); // Use setTimeout(0) to defer to next event loop tick
+    }
   }, 
   [
     canvas,

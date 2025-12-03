@@ -44,8 +44,8 @@ export const ExportSidebar = ({
   const [customWidth, setCustomWidth] = useState<string>("");
   const [customHeight, setCustomHeight] = useState<string>("");
   const [maintainAspectRatio, setMaintainAspectRatio] = useState<boolean>(true);
-  const [quality, setQuality] = useState<number>(80);
-  const [scale, setScale] = useState<number>(1);
+  const [quality, setQuality] = useState<number>(100); // Máxima qualidade por padrão
+  const [scale, setScale] = useState<number>(2); // 2x por padrão para melhor resolução
 
   const pageContext = usePageContext();
   const workspace = editor?.getWorkspace();
@@ -124,7 +124,7 @@ export const ExportSidebar = ({
             format: 'png',
             quality: 1, // PNG sempre usa qualidade máxima
             multiplier: scale,
-            enableRetinaScaling: false,
+            enableRetinaScaling: true, // Habilitar retina scaling
             withoutTransform: false,
           });
           break;
@@ -133,7 +133,7 @@ export const ExportSidebar = ({
             format: 'jpeg',
             quality: quality / 100,
             multiplier: scale,
-            enableRetinaScaling: false,
+            enableRetinaScaling: true, // Habilitar retina scaling
             withoutTransform: false,
           });
           break;
@@ -142,7 +142,7 @@ export const ExportSidebar = ({
             format: 'webp',
             quality: quality / 100,
             multiplier: scale,
-            enableRetinaScaling: false,
+            enableRetinaScaling: true, // Habilitar retina scaling
             withoutTransform: false,
           });
           break;

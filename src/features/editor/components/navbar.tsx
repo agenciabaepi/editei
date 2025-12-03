@@ -174,27 +174,27 @@ export const Navbar = ({
         case 'png':
           dataUrl = editor.canvas.toDataURL({
             format: 'png',
-            quality: 1,
-            multiplier: 1,
-            enableRetinaScaling: false,
+            quality: 1, // Máxima qualidade para PNG
+            multiplier: 2, // 2x para melhor resolução (retina)
+            enableRetinaScaling: true,
             withoutTransform: false,
           });
           break;
         case 'jpg':
           dataUrl = editor.canvas.toDataURL({
             format: 'jpeg',
-            quality: 0.9,
-            multiplier: 1,
-            enableRetinaScaling: false,
+            quality: 1, // Máxima qualidade (100%)
+            multiplier: 2, // 2x para melhor resolução (retina)
+            enableRetinaScaling: true,
             withoutTransform: false,
           });
           break;
         case 'webp':
           dataUrl = editor.canvas.toDataURL({
             format: 'webp',
-            quality: 0.9,
-            multiplier: 1,
-            enableRetinaScaling: false,
+            quality: 1, // Máxima qualidade (100%)
+            multiplier: 2, // 2x para melhor resolução (retina)
+            enableRetinaScaling: true,
             withoutTransform: false,
           });
           break;
@@ -243,9 +243,9 @@ export const Navbar = ({
                     
                     const pageImageData = editor.canvas.toDataURL({
                       format: 'png',
-                      quality: 1,
-                      multiplier: finalScale,
-                      enableRetinaScaling: false,
+                      quality: 1, // Máxima qualidade
+                      multiplier: finalScale * 2, // 2x para melhor resolução
+                      enableRetinaScaling: true,
                       withoutTransform: false,
                     });
                     
@@ -274,9 +274,9 @@ export const Navbar = ({
             
             const pdfImageData = editor.canvas.toDataURL({
               format: 'png',
-              quality: 1,
-              multiplier: 1,
-              enableRetinaScaling: false,
+              quality: 1, // Máxima qualidade
+              multiplier: 2, // 2x para melhor resolução
+              enableRetinaScaling: true,
               withoutTransform: false,
             });
             
@@ -289,7 +289,13 @@ export const Navbar = ({
           editor.saveJson();
           return;
         default:
-          dataUrl = editor.canvas.toDataURL();
+          dataUrl = editor.canvas.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 2,
+            enableRetinaScaling: true,
+            withoutTransform: false,
+          });
       }
 
       downloadFile(dataUrl, format.extension);

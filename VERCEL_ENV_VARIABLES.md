@@ -104,15 +104,31 @@ Token da API do Replicate.
 
 ---
 
-### 8. **PHOTOROOM_API_KEY** (Se usar remoção de fundo)
-Chave da API do PhotoRoom.
+### 8. **REMOVE_BG_API_KEY** (Se usar remoção de fundo)
+Chave da API do remove.bg para remoção de fundo de imagens.
+
+**Onde obter:**
+- https://www.remove.bg/api
+- Crie uma conta e gere uma API key
+
+**Valor:**
+```
+9aQrnqkrnjxE2LBTTFggWbrV
+```
+
+**⚠️ Importante:** Mantenha esta chave segura e não a compartilhe publicamente.
+
+---
+
+### 9. **PHOTOROOM_API_KEY** (Se usar remoção de fundo - alternativa)
+Chave da API do PhotoRoom (alternativa ao remove.bg).
 
 **Onde obter:**
 - https://www.photoroom.com/api/
 
 ---
 
-### 9. **UNSPLASH_ACCESS_KEY** (Se usar busca de imagens)
+### 10. **UNSPLASH_ACCESS_KEY** (Se usar busca de imagens)
 Chave de acesso da API do Unsplash.
 
 **Onde obter:**

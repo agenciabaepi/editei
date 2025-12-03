@@ -29,8 +29,12 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
   }, [historyIndex]);
 
   const save = useCallback((skip = false) => {
-    if (!canvas) return;
+    if (!canvas) {
+      console.warn('[History] Save called but canvas is null');
+      return;
+    }
 
+    console.log('[History] Save called, skip:', skip);
     const currentState = canvas.toJSON(JSON_KEYS);
     const json = JSON.stringify(currentState);
 
@@ -45,8 +49,19 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
     const height = workspace?.height || 0;
     const width = workspace?.width || 0;
 
+    console.log('[History] Calling saveCallback with:', { 
+      hasJson: !!json, 
+      jsonLength: json.length,
+      width, 
+      height 
+    });
+
     // Save immediately without thumbnail (non-blocking)
-    saveCallback?.({ json, height, width });
+    if (saveCallback) {
+      saveCallback({ json, height, width });
+    } else {
+      console.warn('[History] saveCallback is not defined!');
+    }
 
     // Generate thumbnail asynchronously to avoid blocking UI
     // Only generate thumbnail every 3 seconds to reduce load

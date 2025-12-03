@@ -43,34 +43,38 @@ export const useCanvasEvents = ({
     
     // Use requestAnimationFrame for better performance
     const scheduleSave = () => {
-      if (pendingSaveRef.current) return;
+      if (pendingSaveRef.current) {
+        console.log('[CanvasEvents] Save already pending, skipping...');
+        return;
+      }
       pendingSaveRef.current = true;
+      console.log('[CanvasEvents] Scheduling save...');
       
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current);
       }
       
       rafIdRef.current = requestAnimationFrame(() => {
-        // Use requestIdleCallback if available for non-critical saves
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(() => {
-            saveRef.current();
-            pendingSaveRef.current = false;
-          }, { timeout: 1000 });
-        } else {
-          // Fallback: use setTimeout with longer delay
-          setTimeout(() => {
-            saveRef.current();
-            pendingSaveRef.current = false;
-          }, 300);
+        console.log('[CanvasEvents] Executing save in RAF callback');
+        // Call save directly instead of using requestIdleCallback
+        // requestIdleCallback can be unreliable and may not fire
+        try {
+          saveRef.current();
+        } catch (error) {
+          console.error('[CanvasEvents] Error calling save:', error);
         }
+        pendingSaveRef.current = false;
         rafIdRef.current = null;
       });
     };
     
     // Throttled save for modifications (very frequent during dragging/resizing)
     const throttledModifySave = () => {
-      if (modifyTimeoutRef.current) return;
+      if (modifyTimeoutRef.current) {
+        console.log('[CanvasEvents] Modify save already scheduled, skipping...');
+        return;
+      }
+      console.log('[CanvasEvents] Scheduling throttled modify save...');
       modifyTimeoutRef.current = setTimeout(() => {
         scheduleSave();
         modifyTimeoutRef.current = null;
@@ -79,6 +83,7 @@ export const useCanvasEvents = ({
     
     // Immediate save for add/remove (less frequent)
     const immediateSave = () => {
+      console.log('[CanvasEvents] Immediate save triggered (object added/removed)');
       scheduleSave();
     };
     

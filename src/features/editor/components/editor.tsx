@@ -129,11 +129,19 @@ export const Editor = ({ initialData }: EditorProps) => {
       width: number,
       thumbnail?: string,
     }) => {
+      console.log('[AutoSave] debouncedSave called with:', {
+        hasJson: !!values.json,
+        jsonLength: values.json?.length || 0,
+        width: values.width,
+        height: values.height,
+        hasThumbnail: !!values.thumbnail
+      });
+      
       if (debouncedSaveRef.current) {
-        console.log('[AutoSave] Queuing save...');
+        console.log('[AutoSave] Queuing save via debounced function...');
         debouncedSaveRef.current(values);
       } else {
-        console.warn('[AutoSave] debouncedSaveRef is null!');
+        console.error('[AutoSave] debouncedSaveRef is null! Cannot save.');
       }
     },
     []

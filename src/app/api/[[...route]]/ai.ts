@@ -86,12 +86,15 @@ const app = new Hono()
         console.log('[remove.bg] Image size OK:', (imageBuffer.length / 1024 / 1024).toFixed(2), 'MB');
 
         // Use remove.bg API - create FormData
+        // According to documentation: https://www.remove.bg/api#remove-background
         console.log('[remove.bg] Creating FormData...');
         const formData = new FormDataLib();
         formData.append('image_file', imageBuffer, {
           filename: filename,
           contentType: filename.endsWith('.jpg') || filename.endsWith('.jpeg') ? 'image/jpeg' : 'image/png',
         });
+        // Add size parameter (auto = automatic sizing, up to 25MP)
+        formData.append('size', 'auto');
         
         // Get headers from form-data
         const formHeaders = formData.getHeaders();
@@ -122,6 +125,8 @@ const app = new Hono()
         const startTime = Date.now();
         
         // remove.bg API endpoint
+        // Documentation: https://www.remove.bg/api#remove-background
+        // Header must be X-Api-Key (not X-API-Key)
         const response = await fetch('https://api.remove.bg/v1.0/removebg', {
           method: 'POST',
           headers: {

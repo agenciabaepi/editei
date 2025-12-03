@@ -1,3 +1,4 @@
+import './server-only';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { userQueries, sessionQueries } from './database';

@@ -44,9 +44,14 @@ export const FontSidebar = ({
     const loadCustomFontsInfo = async () => {
       try {
         const response = await fetch('/api/fonts');
-        if (response.ok) {
+        if (response.ok && response.status === 200) {
           const data = await response.json();
           const customFontsData = data.fonts || [];
+          
+          if (!Array.isArray(customFontsData)) {
+            console.warn('[Font Sidebar] Invalid fonts data format');
+            return;
+          }
           const proFontsMap = new Map<string, boolean>();
           const newFonts: FontDefinition[] = [];
           
@@ -97,7 +102,11 @@ export const FontSidebar = ({
           }
         }
       } catch (error) {
-        console.error('Failed to load custom fonts info:', error);
+        // Silently fail - custom fonts are optional
+        // Only log in development
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to load custom fonts info:', error);
+        }
       }
     };
     

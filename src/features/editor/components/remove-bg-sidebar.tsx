@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { AlertTriangle, Loader, Info } from "lucide-react";
+import { AlertTriangle, Loader } from "lucide-react";
 import { useState, useEffect } from "react";
 
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
@@ -29,8 +29,6 @@ export const RemoveBgSidebar = ({
 }: RemoveBgSidebarProps) => {
   const { shouldBlock, triggerPaywall } = usePaywall();
   const mutation = useRemoveBg();
-  const [isFirstTime, setIsFirstTime] = useState(true);
-  const [hasProcessedBefore, setHasProcessedBefore] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const selectedObject = editor?.selectedObjects[0];
@@ -62,12 +60,6 @@ export const RemoveBgSidebar = ({
     }
   }, [mutation.isPending]);
 
-  // Check if models have been loaded before (stored in localStorage)
-  useEffect(() => {
-    const hasLoaded = localStorage.getItem('bg-removal-models-loaded') === 'true';
-    setHasProcessedBefore(hasLoaded);
-    setIsFirstTime(!hasLoaded);
-  }, []);
 
   const onClose = () => {
     onChangeActiveTool("select");
@@ -87,11 +79,6 @@ export const RemoveBgSidebar = ({
       onSuccess: (response) => {
         console.log('[Remove BG Sidebar] Success response received');
         setProgress(100); // Complete progress
-        
-        // Mark that models have been loaded
-        localStorage.setItem('bg-removal-models-loaded', 'true');
-        setHasProcessedBefore(true);
-        setIsFirstTime(false);
         
         // Reset progress after a brief delay
         setTimeout(() => setProgress(0), 500);
@@ -162,7 +149,7 @@ export const RemoveBgSidebar = ({
               <div className="space-y-2">
                 <Progress value={progress} className="h-2" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{isFirstTime ? 'Carregando modelos...' : 'Removendo fundo...'}</span>
+                  <span>Removendo fundo...</span>
                   <span>{Math.round(progress)}%</span>
                 </div>
               </div>
@@ -175,28 +162,12 @@ export const RemoveBgSidebar = ({
               {mutation.isPending ? (
                 <>
                   <Loader className="size-4 mr-2 animate-spin" />
-                  {isFirstTime ? 'Carregando modelos...' : 'Removendo fundo...'}
+                  Removendo fundo...
                 </>
               ) : (
                 "Remover fundo"
               )}
             </Button>
-            {isFirstTime && !mutation.isPending && (
-              <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-md border border-blue-200">
-                <Info className="size-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-blue-800">
-                  <strong>Primeira vez?</strong> A primeira execução pode demorar mais (~30-60s) enquanto os modelos de IA são baixados. As próximas vezes serão muito mais rápidas!
-                </p>
-              </div>
-            )}
-            {mutation.isPending && isFirstTime && (
-              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-md border border-amber-200">
-                <Loader className="size-4 text-amber-600 mt-0.5 animate-spin flex-shrink-0" />
-                <p className="text-xs text-amber-800">
-                  <strong>Carregando modelos pela primeira vez...</strong> Isso pode levar 30-60 segundos. Por favor, aguarde. As próximas vezes serão instantâneas!
-                </p>
-              </div>
-            )}
             {mutation.isError && (
               <p className="text-sm text-red-500 text-center">
                 {mutation.error instanceof Error ? mutation.error.message : 'Erro ao remover fundo'}

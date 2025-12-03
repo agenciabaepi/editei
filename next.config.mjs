@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ensure server-only packages are not bundled
+  serverComponentsExternalPackages: ['bcryptjs'],
   images: {
     remotePatterns: [
       {
@@ -20,43 +22,36 @@ const nextConfig = {
       },
     ],
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-        ],
-      },
-    ];
-  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // Fix for @imgly/background-removal and onnxruntime-web
+      // Fix for potential Node.js modules in browser
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         path: false,
         crypto: false,
       };
-      
-      // Handle .wasm files
-      config.experiments = {
-        ...config.experiments,
-        asyncWebAssembly: true,
-      };
-      
-      // Note: onnxruntime-web is loaded dynamically via import() in use-remove-bg.ts
-      // The .mjs files use import.meta which webpack can't process, but since
-      // they're loaded dynamically, webpack doesn't need to bundle them
-      // The module will be available at runtime from node_modules
+    } else {
+      // Server-side: Ensure bcryptjs is external and not bundled
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        if (!config.externals.includes('bcryptjs')) {
+          config.externals.push('bcryptjs');
+        }
+      } else if (typeof config.externals === 'object') {
+        config.externals.bcryptjs = 'commonjs bcryptjs';
+      } else if (typeof config.externals === 'function') {
+        const originalExternals = config.externals;
+        config.externals = [
+          originalExternals,
+          (context, request, callback) => {
+            if (request === 'bcryptjs') {
+              return callback(null, 'commonjs bcryptjs');
+            }
+            originalExternals(context, request, callback);
+          }
+        ];
+      }
     }
     return config;
   },

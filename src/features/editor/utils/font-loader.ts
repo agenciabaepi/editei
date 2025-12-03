@@ -148,7 +148,11 @@ class FontLoader {
         this.customFontsLoaded = true;
       }
     } catch (error) {
-      console.error('Failed to load custom fonts:', error);
+      // Silently fail - custom fonts are optional
+      // Only log in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[FontLoader] Failed to load custom fonts:', error);
+      }
     }
   }
 
@@ -238,7 +242,10 @@ class FontLoader {
       await loadPromise;
       this.loadedFonts.add(fontName);
     } catch (error) {
-      console.error(`Failed to load font ${fontName}:`, error);
+      // Silently fail - fonts will fallback to system fonts
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[FontLoader] Failed to load font ${fontName}:`, error);
+      }
     } finally {
       this.loadingPromises.delete(fontName);
     }
@@ -268,7 +275,12 @@ class FontLoader {
       };
       
       link.onerror = () => {
-        reject(new Error(`Failed to load font: ${font.name}`));
+        // Silently fail for Google Fonts - they may be blocked by COEP or network issues
+        // Fonts will fallback to system fonts
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`[FontLoader] Failed to load Google Font: ${font.name}`);
+        }
+        resolve(); // Resolve instead of reject to prevent breaking the app
       };
 
       document.head.appendChild(link);

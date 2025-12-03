@@ -36,9 +36,9 @@ const app = new Hono()
         
         console.log('[Replicate rembg] Starting background removal with cjwbw/rembg...');
         
-        // Convert image to a format Replicate can accept
-        // Replicate accepts URLs or File/Blob objects
-        let imageInput: string | Blob;
+        // Convert image to Buffer for Replicate SDK
+        // The SDK in Node.js works best with Buffer or File objects
+        let imageBuffer: Buffer;
         let imageSize = 0;
         
         if (image.startsWith('data:')) {
@@ -48,26 +48,26 @@ const app = new Hono()
             throw new Error('Invalid data URL format');
           }
           const base64Image = parts[1];
-          const mimeMatch = image.match(/data:([^;]+);/);
-          const mimeType = mimeMatch ? mimeMatch[1] : 'image/png';
-          
-          // Convert base64 to Buffer, then to Blob
-          const imageBuffer = Buffer.from(base64Image, 'base64');
+          imageBuffer = Buffer.from(base64Image, 'base64');
           imageSize = imageBuffer.length;
-          console.log('[Replicate rembg] Converted data URL to buffer, size:', imageSize, 'bytes (', (imageSize / 1024 / 1024).toFixed(2), 'MB)');
-          
-          // Create a Blob from the buffer (Replicate SDK accepts Blob)
-          imageInput = new Blob([imageBuffer], { type: mimeType });
+          console.log('[Replicate rembg] Converted data URL to Buffer, size:', imageSize, 'bytes (', (imageSize / 1024 / 1024).toFixed(2), 'MB)');
         } else if (image.startsWith('http')) {
-          // Use URL directly - Replicate can fetch from URLs
-          console.log('[Replicate rembg] Using image URL:', image);
-          imageInput = image;
+          // Fetch image from URL and convert to Buffer
+          console.log('[Replicate rembg] Fetching image from URL:', image);
+          const imageResponse = await fetch(image);
+          if (!imageResponse.ok) {
+            throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+          }
+          const imageBlob = await imageResponse.blob();
+          const arrayBuffer = await imageBlob.arrayBuffer();
+          imageBuffer = Buffer.from(arrayBuffer);
+          imageSize = imageBuffer.length;
+          console.log('[Replicate rembg] Fetched image, size:', imageSize, 'bytes (', (imageSize / 1024 / 1024).toFixed(2), 'MB)');
         } else {
           // Assume it's already base64 without data: prefix
-          const imageBuffer = Buffer.from(image, 'base64');
+          imageBuffer = Buffer.from(image, 'base64');
           imageSize = imageBuffer.length;
-          imageInput = new Blob([imageBuffer], { type: 'image/png' });
-          console.log('[Replicate rembg] Using provided base64, size:', imageSize, 'bytes (', (imageSize / 1024 / 1024).toFixed(2), 'MB)');
+          console.log('[Replicate rembg] Using provided base64 as Buffer, size:', imageSize, 'bytes (', (imageSize / 1024 / 1024).toFixed(2), 'MB)');
         }
 
         // Check image size - Replicate has limits (typically 10MB for free tier)
@@ -85,35 +85,17 @@ const app = new Hono()
         const startTime = Date.now();
         
         // Use Replicate API to remove background
-        // Model: cjwbw/rembg
-        // Input: image (URL or Blob)
-        // Try without version first, Replicate will use default
-        let output;
-        try {
-          output = await replicate.run(
-            "cjwbw/rembg",
-            {
-              input: {
-                image: imageInput,
-              }
+        // Model: cjwbw/rembg with specific version hash
+        // Pass Buffer directly - Replicate SDK will handle it
+        console.log('[Replicate rembg] Calling model with version hash and Buffer...');
+        const output = await replicate.run(
+          "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
+          {
+            input: {
+              image: imageBuffer,
             }
-          );
-        } catch (error: any) {
-          // If that fails, try with a known version
-          if (error.message?.includes('version') || error.message?.includes('422')) {
-            console.log('[Replicate rembg] Trying with specific version...');
-            output = await replicate.run(
-              "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
-              {
-                input: {
-                  image: imageInput,
-                }
-              }
-            );
-          } else {
-            throw error;
           }
-        }
+        );
         
         const elapsed = Date.now() - startTime;
         console.log('[Replicate rembg] API response received after', elapsed, 'ms');

@@ -91,6 +91,7 @@ export const Editor = ({ initialData }: EditorProps) => {
   
   // Initialize debounced function only once
   useEffect(() => {
+    console.log('[AutoSave] Initializing debounced save function...');
     debouncedSaveRef.current = debounce(
       (values: { 
         json: string,
@@ -100,23 +101,32 @@ export const Editor = ({ initialData }: EditorProps) => {
       }) => {
         // Don't save if auto-save is disabled (for guest users)
         if (!disableAutoSaveRef.current) {
-          console.log('[AutoSave] Executing save:', { 
+          console.log('[AutoSave] Executing debounced save:', { 
             hasJson: !!values.json, 
+            jsonLength: values.json?.length || 0,
             width: values.width, 
             height: values.height,
             hasThumbnail: !!values.thumbnail 
           });
-          mutateRef.current(values);
+          
+          if (mutateRef.current) {
+            console.log('[AutoSave] Calling mutateRef.current...');
+            mutateRef.current(values);
+          } else {
+            console.error('[AutoSave] mutateRef.current is null!');
+          }
         } else {
-          console.log('[AutoSave] Save disabled (guest user)');
+          console.log('[AutoSave] Save disabled (guest user or auto-save disabled)');
         }
       },
       800 // 800ms debounce to reduce API calls and improve performance
     );
+    console.log('[AutoSave] Debounced save function initialized');
 
     // Cleanup on unmount only
     return () => {
       if (debouncedSaveRef.current) {
+        console.log('[AutoSave] Cancelling debounced save on unmount');
         debouncedSaveRef.current.cancel();
       }
     };

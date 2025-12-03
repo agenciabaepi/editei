@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Download, Image, FileText, Layers, Settings, Crown } from "lucide-react";
+import { Download, Image, FileText, Layers, Settings, Crown, ArrowLeft } from "lucide-react";
 import jsPDF from "jspdf";
 
 import { ExportFormat, ExportOptions, EXPORT_FORMATS, getFormatsByCategory } from "@/features/editor/constants/export-formats";
@@ -307,10 +307,19 @@ export const ExportSidebar = ({
         activeTool === "export" ? "visible" : "hidden",
       )}
     >
-      <ToolSidebarHeader
-        title="Baixar"
-        description="Exporte seu design em vários formatos"
-      />
+      <div className="p-4 border-b">
+        <div className="flex items-center gap-2 mb-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => onChangeActiveTool("select")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <p className="text-sm font-medium">Baixar</p>
+        </div>
+      </div>
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
           {/* Formato de arquivo */}
@@ -357,12 +366,7 @@ export const ExportSidebar = ({
 
           {/* Tamanho */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Tamanho</Label>
-              {scale > 2 && !isPro && (
-                <Crown className="h-4 w-4 text-gray-400" />
-              )}
-            </div>
+            <Label className="text-sm font-medium">Tamanho ×</Label>
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <Slider
@@ -380,7 +384,7 @@ export const ExportSidebar = ({
                   step={0.125}
                   className="flex-1"
                 />
-                <div className="flex items-center gap-1 w-20">
+                <div className="flex items-center gap-1">
                   <Input
                     type="number"
                     value={scale.toFixed(3)}
@@ -394,13 +398,13 @@ export const ExportSidebar = ({
                         setScale(newScale);
                       }
                     }}
-                    className="h-8 w-16 text-sm text-center"
+                    className="h-8 w-20 text-sm text-center"
                     step="0.125"
                     min="0.25"
                     max={isPro ? "5" : "2"}
                   />
                   {scale > 2 && !isPro && (
-                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <Crown className="h-4 w-4 text-gray-400" />
                   )}
                 </div>
               </div>
@@ -413,12 +417,7 @@ export const ExportSidebar = ({
           {/* Qualidade */}
           {(selectedFormat.id === 'jpg' || selectedFormat.id === 'webp') && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium">Qualidade</Label>
-                {quality > 80 && !isPro && (
-                  <Crown className="h-4 w-4 text-yellow-500" />
-                )}
-              </div>
+              <Label className="text-sm font-medium">Qualidade</Label>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <Slider
@@ -436,7 +435,7 @@ export const ExportSidebar = ({
                     step={5}
                     className="flex-1"
                   />
-                  <div className="flex items-center gap-1 w-20">
+                  <div className="flex items-center gap-1">
                     <Input
                       type="number"
                       value={quality}
@@ -450,7 +449,7 @@ export const ExportSidebar = ({
                           setQuality(newQuality);
                         }
                       }}
-                      className="h-8 w-16 text-sm text-center"
+                      className="h-8 w-20 text-sm text-center"
                       step="5"
                       min="10"
                       max={isPro ? "100" : "80"}
@@ -460,9 +459,8 @@ export const ExportSidebar = ({
                     )}
                   </div>
                 </div>
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Baixa (10%)</span>
-                  <span>Alta ({isPro ? '100%' : '80%'})</span>
+                <div className="text-xs text-muted-foreground">
+                  Tamanho do arquivo: {fileSizeLabel}
                 </div>
               </div>
             </div>

@@ -47,9 +47,8 @@ export const useRemoveBg = () => {
 
         // Process with @imgly/background-removal
         // Dynamic import to avoid SSR issues with WebAssembly
-        // webpackIgnore prevents webpack from processing onnxruntime-web dependencies
         console.log('[useRemoveBg] Loading @imgly/background-removal...');
-        const { removeBackground } = await import(/* webpackIgnore: true */ "@imgly/background-removal");
+        const { removeBackground } = await import("@imgly/background-removal");
         console.log('[useRemoveBg] Processing image with @imgly/background-removal...');
         const resultBlob = await removeBackground(imageBlob);
         console.log('[useRemoveBg] Background removed successfully, result size:', resultBlob.size, 'bytes');

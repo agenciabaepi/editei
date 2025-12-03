@@ -53,12 +53,10 @@ const nextConfig = {
         asyncWebAssembly: true,
       };
       
-      // Ignore onnxruntime-web completely - it's loaded dynamically and uses import.meta
-      // This prevents webpack from trying to process .mjs files that use import.meta
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'onnxruntime-web': false,
-      };
+      // Note: onnxruntime-web is loaded dynamically via import() in use-remove-bg.ts
+      // The .mjs files use import.meta which webpack can't process, but since
+      // they're loaded dynamically, webpack doesn't need to bundle them
+      // The module will be available at runtime from node_modules
     }
     return config;
   },

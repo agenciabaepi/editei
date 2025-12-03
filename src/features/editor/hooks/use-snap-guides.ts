@@ -21,10 +21,17 @@ export const useSnapGuides = ({
   const lastSnapRef = useRef<{ x: boolean; y: boolean }>({ x: false, y: false });
   const isRenderingRef = useRef(false);
   const handleAfterRenderRef = useRef<((options: any) => void) | null>(null);
+  const lastRenderTimeRef = useRef<number>(0);
+  const isListenerRegisteredRef = useRef<boolean>(false);
+  const RENDER_THROTTLE = 16; // ~60fps (16ms entre renders)
 
   useEffect(() => {
     if (!canvas || !workspace || !enabled) {
       selectedObjectRef.current = null;
+      // Limpar listeners antes de sair
+      if (handleAfterRenderRef.current && canvas) {
+        canvas.off('after:render', handleAfterRenderRef.current);
+      }
       handleAfterRenderRef.current = null;
       canvas?.renderAll();
       return;
@@ -92,6 +99,13 @@ export const useSnapGuides = ({
     // Criar handler apenas uma vez para evitar duplicação
     if (!handleAfterRenderRef.current) {
       handleAfterRenderRef.current = (options: any) => {
+        // Throttle: só renderizar a cada 16ms (60fps)
+        const now = Date.now();
+        if (now - lastRenderTimeRef.current < RENDER_THROTTLE) {
+          return;
+        }
+        lastRenderTimeRef.current = now;
+        
         // Prevenir renderização duplicada no mesmo frame
         if (isRenderingRef.current) return;
         isRenderingRef.current = true;
@@ -136,13 +150,13 @@ export const useSnapGuides = ({
         ctx.shadowBlur = 0;
         ctx.lineCap = 'butt'; // Evitar extensões nas pontas
 
-        // Desenhar linha vertical central (centro X do workspace branco)
+        // Desenhar APENAS UMA linha vertical central (centro X do workspace branco)
         ctx.beginPath();
         ctx.moveTo(centerX, centerY - extension);
         ctx.lineTo(centerX, centerY + extension);
         ctx.stroke();
 
-        // Desenhar linha horizontal central (centro Y do workspace branco)
+        // Desenhar APENAS UMA linha horizontal central (centro Y do workspace branco)
         ctx.beginPath();
         ctx.moveTo(centerX - extension, centerY);
         ctx.lineTo(centerX + extension, centerY);
@@ -158,7 +172,7 @@ export const useSnapGuides = ({
     }
     
     const handleAfterRender = handleAfterRenderRef.current;
-
+    
     // Função unificada para atualizar o objeto selecionado
     const updateSelectedObject = () => {
       const activeObject = canvas.getActiveObject();
@@ -203,15 +217,31 @@ export const useSnapGuides = ({
       canvas.renderAll();
     };
 
-    // Registrar eventos - usar apenas os necessários para evitar duplicação
-    canvas.on('after:render', handleAfterRender);
+    // Registrar eventos APENAS se ainda não foram registrados
+    // IMPORTANTE: Remover listeners anteriores antes de adicionar novos
+    if (handleAfterRender) {
+      canvas.off('after:render', handleAfterRender);
+    }
+    canvas.off('selection:created', handleSelectionCreated);
+    canvas.off('selection:updated', handleSelectionUpdated);
+    canvas.off('object:moving', handleObjectMoving);
+    canvas.off('object:modified', handleObjectModified);
+    canvas.off('selection:cleared', handleSelectionCleared);
+    
+    // Agora adicionar os listeners
+    if (handleAfterRender) {
+      canvas.on('after:render', handleAfterRender);
+    }
     canvas.on('selection:created', handleSelectionCreated);
     canvas.on('selection:updated', handleSelectionUpdated);
     canvas.on('object:moving', handleObjectMoving);
     canvas.on('object:modified', handleObjectModified);
     canvas.on('selection:cleared', handleSelectionCleared);
+    
+    isListenerRegisteredRef.current = true;
 
     return () => {
+      // Limpar todos os listeners
       if (handleAfterRenderRef.current) {
         canvas.off('after:render', handleAfterRenderRef.current);
       }
@@ -223,6 +253,7 @@ export const useSnapGuides = ({
       selectedObjectRef.current = null;
       lastSnapRef.current = { x: false, y: false };
       handleAfterRenderRef.current = null;
+      isListenerRegisteredRef.current = false;
     };
   }, [canvas, workspace, enabled, margin, snapThreshold]);
 

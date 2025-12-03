@@ -22,6 +22,7 @@ import { StrokeColorSidebar } from "@/features/editor/components/stroke-color-si
 import { StrokeWidthSidebar } from "@/features/editor/components/stroke-width-sidebar";
 import { OpacitySidebar } from "@/features/editor/components/opacity-sidebar";
 import { TextSidebar } from "@/features/editor/components/text-sidebar";
+import { TextSpacingSidebar } from "@/features/editor/components/text-spacing-sidebar";
 import { FontSidebar } from "@/features/editor/components/font-sidebar";
 import { ImageSidebar } from "@/features/editor/components/image-sidebar";
 import { FilterSidebar } from "@/features/editor/components/filter-sidebar";
@@ -268,6 +269,11 @@ export const Editor = ({ initialData }: EditorProps) => {
           activeTool={activeTool}
           onChangeActiveTool={onChangeActiveTool}
         />
+        <TextSpacingSidebar
+          editor={editor}
+          activeTool={activeTool}
+          onChangeActiveTool={onChangeActiveTool}
+        />
         <FontSidebar
           editor={editor}
           activeTool={activeTool}
@@ -364,8 +370,8 @@ export const Editor = ({ initialData }: EditorProps) => {
             onChangeActiveTool={onChangeActiveTool}
             key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
-          <div className="flex-1 h-[calc(100%-124px)] bg-muted relative" ref={containerRef}>
-            <div className="bg-white h-full relative">
+          <div className="flex-1 h-[calc(100%-124px)] bg-gray-200 relative" ref={containerRef}>
+            <div className="bg-gray-200 h-full relative">
               <canvas ref={canvasRef} />
               <RemoveBgOverlay
                 editor={editor}

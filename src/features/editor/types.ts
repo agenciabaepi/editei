@@ -115,13 +115,15 @@ export type ActiveTool =
   | "border-radius"
   | "shadow"
   | "gradient"
-  | "background";
+  | "background"
+  | "text-spacing";
 
 export const FILL_COLOR = "rgba(0,0,0,1)";
 export const STROKE_COLOR = "rgba(0,0,0,1)";
 export const STROKE_WIDTH = 2;
 export const STROKE_DASH_ARRAY = [];
 export const FONT_FAMILY = "Arial";
+export const DEFAULT_MARGIN = 40; // Default margin from workspace edges (like Canva)
 export const FONT_SIZE = 32;
 export const FONT_WEIGHT = 400;
 
@@ -247,6 +249,10 @@ export interface Editor {
   getActiveFontStyle: () => string;
   changeFontWeight: (value: number) => void;
   getActiveFontWeight: () => number;
+  changeCharSpacing: (value: number) => void;
+  getActiveCharSpacing: () => number;
+  changeLineHeight: (value: number) => void;
+  getActiveLineHeight: () => number;
   getActiveFontFamily: () => string;
   changeFontFamily: (value: string) => void;
   addText: (value: string, options?: ITextboxOptions) => void;

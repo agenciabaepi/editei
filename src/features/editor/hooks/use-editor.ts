@@ -18,6 +18,7 @@ import {
   FONT_WEIGHT,
   FONT_SIZE,
   JSON_KEYS,
+  DEFAULT_MARGIN,
 } from "@/features/editor/types";
 import { useHistory } from "@/features/editor/hooks/use-history";
 import { 
@@ -32,6 +33,7 @@ import { useAutoResize } from "@/features/editor/hooks/use-auto-resize";
 import { useCanvasEvents } from "@/features/editor/hooks/use-canvas-events";
 import { useWindowEvents } from "@/features/editor/hooks/use-window-events";
 import { useLoadState } from "@/features/editor/hooks/use-load-state";
+import { useSnapGuides } from "@/features/editor/hooks/use-snap-guides";
 import { fontLoader, getFontStack } from "@/features/editor/utils/font-loader";
 
 const buildEditor = ({
@@ -114,6 +116,8 @@ const buildEditor = ({
     const data = JSON.parse(json);
 
     canvas.loadFromJSON(data, () => {
+      // Remove any margin guides that might have been saved
+      removeMarginGuides();
       autoZoom();
     });
   };
@@ -122,6 +126,13 @@ const buildEditor = ({
     return canvas
     .getObjects()
     .find((object) => object.name === "clip");
+  };
+
+  // Helper function to remove all margin guides
+  const removeMarginGuides = () => {
+    if (!canvas) return;
+    const existingMarginGuides = canvas.getObjects().filter((obj: any) => obj.name === 'margin-guide');
+    existingMarginGuides.forEach(guide => canvas.remove(guide));
   };
 
   const ensureWorkspaceExists = () => {
@@ -138,7 +149,7 @@ const buildEditor = ({
         width: 900,
         height: 1200,
         name: "clip",
-        fill: "white",
+        fill: "white", // Branco para a área de edição (contrasta com fundo cinza)
         selectable: false,
         hasControls: false,
         evented: false,
@@ -156,6 +167,10 @@ const buildEditor = ({
       canvas.add(workspace);
       canvas.centerObject(workspace);
       canvas.sendToBack(workspace);
+      
+      // Remove any existing margin guides
+      removeMarginGuides();
+      
       // Safe render with canvas validation
       if (canvas.getContext && canvas.getContext()) {
         try {
@@ -169,6 +184,10 @@ const buildEditor = ({
       // Ensure existing workspace is visible
       workspace.set({ visible: true, opacity: 1 });
       canvas.sendToBack(workspace);
+      
+      // Remove any existing margin guides
+      removeMarginGuides();
+      
       // Safe render with canvas validation
       if (canvas.getContext && canvas.getContext()) {
         try {
@@ -514,6 +533,52 @@ const buildEditor = ({
         }
       });
       canvas.renderAll();
+    },
+    changeCharSpacing: (value: number) => {
+      canvas.getActiveObjects().forEach((object) => {
+        if (isTextType(object.type)) {
+          // @ts-ignore
+          // charSpacing exists in fabric.js
+          object.set({ charSpacing: value });
+        }
+      });
+      canvas.renderAll();
+    },
+    getActiveCharSpacing: () => {
+      const selectedObject = selectedObjects[0];
+
+      if (!selectedObject) {
+        return 0;
+      }
+
+      // @ts-ignore
+      // charSpacing exists in fabric.js
+      const value = selectedObject.get("charSpacing") || 0;
+
+      return value;
+    },
+    changeLineHeight: (value: number) => {
+      canvas.getActiveObjects().forEach((object) => {
+        if (isTextType(object.type)) {
+          // @ts-ignore
+          // lineHeight exists in fabric.js
+          object.set({ lineHeight: value });
+        }
+      });
+      canvas.renderAll();
+    },
+    getActiveLineHeight: () => {
+      const selectedObject = selectedObjects[0];
+
+      if (!selectedObject) {
+        return 1.16; // Default line height
+      }
+
+      // @ts-ignore
+      // lineHeight exists in fabric.js
+      const value = selectedObject.get("lineHeight") || 1.16;
+
+      return value;
     },
     changeOpacity: (value: number) => {
       canvas.getActiveObjects().forEach((object) => {
@@ -1784,7 +1849,7 @@ export const useEditor = ({
         width: initialWidth.current,
         height: initialHeight.current,
         name: "clip",
-        fill: "white",
+        fill: "white", // Branco para a área de edição (contrasta com fundo cinza)
         selectable: false,
         hasControls: false,
         evented: false,
@@ -1802,6 +1867,10 @@ export const useEditor = ({
 
       initialCanvas.add(initialWorkspace);
       initialCanvas.centerObject(initialWorkspace);
+      
+      // Remove any existing margin guides
+      const existingMarginGuides = initialCanvas.getObjects().filter((obj: any) => obj.name === 'margin-guide');
+      existingMarginGuides.forEach(guide => initialCanvas.remove(guide));
       
       // Add workspace as a visible background object, not clipPath
       // clipPath makes the workspace invisible, preventing background color changes
@@ -1821,6 +1890,16 @@ export const useEditor = ({
       setHistoryIndex, // No need, this is from useState
     ]
   );
+
+  // Initialize snap guides system (after editor is created)
+  const workspace = editor?.getWorkspace();
+  useSnapGuides({
+    canvas,
+    workspace,
+    enabled: true,
+    margin: DEFAULT_MARGIN,
+    snapThreshold: 10, // 10px para snap magnético
+  });
 
   return { init, editor };
 };

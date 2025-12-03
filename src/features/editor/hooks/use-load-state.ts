@@ -25,6 +25,10 @@ export const useLoadState = ({
       const data = JSON.parse(initialState.current);
 
       canvas.loadFromJSON(data, () => {
+        // Remove any margin guides that might have been saved
+        const existingMarginGuides = canvas.getObjects().filter((obj: any) => obj.name === 'margin-guide');
+        existingMarginGuides.forEach(guide => canvas.remove(guide));
+        
         const currentState = JSON.stringify(
           canvas.toJSON(JSON_KEYS),
         );

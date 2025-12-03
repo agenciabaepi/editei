@@ -22,7 +22,8 @@ import {
   CornerUpLeft,
   Box,
   Palette,
-  Image
+  Image,
+  Type
 } from "lucide-react";
 
 import { isTextType } from "@/features/editor/utils";
@@ -372,6 +373,22 @@ export const Toolbar = ({
             value={properties.fontSize}
             onChange={onChangeFontSize}
          />
+        </div>
+      )}
+      {isText && (
+        <div className="flex items-center h-full justify-center">
+          <Hint label="Espaçamento de texto" side="bottom" sideOffset={5}>
+            <Button
+              onClick={() => onChangeActiveTool("text-spacing")}
+              size="icon"
+              variant="ghost"
+              className={cn(
+                activeTool === "text-spacing" && "bg-gray-100"
+              )}
+            >
+              <Type className="size-4" />
+            </Button>
+          </Hint>
         </div>
       )}
       {isImage && (

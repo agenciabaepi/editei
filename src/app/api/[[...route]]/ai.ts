@@ -87,14 +87,33 @@ const app = new Hono()
         // Use Replicate API to remove background
         // Model: cjwbw/rembg
         // Input: image (URL or Blob)
-        const output = await replicate.run(
-          "cjwbw/rembg:latest",
-          {
-            input: {
-              image: imageInput,
+        // Try without version first, Replicate will use default
+        let output;
+        try {
+          output = await replicate.run(
+            "cjwbw/rembg",
+            {
+              input: {
+                image: imageInput,
+              }
             }
+          );
+        } catch (error: any) {
+          // If that fails, try with a known version
+          if (error.message?.includes('version') || error.message?.includes('422')) {
+            console.log('[Replicate rembg] Trying with specific version...');
+            output = await replicate.run(
+              "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
+              {
+                input: {
+                  image: imageInput,
+                }
+              }
+            );
+          } else {
+            throw error;
           }
-        );
+        }
         
         const elapsed = Date.now() - startTime;
         console.log('[Replicate rembg] API response received after', elapsed, 'ms');

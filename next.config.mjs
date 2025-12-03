@@ -53,16 +53,12 @@ const nextConfig = {
         asyncWebAssembly: true,
       };
       
-      // Ignore onnxruntime-web files that use import.meta (they're loaded dynamically)
-      config.module = config.module || {};
-      config.module.rules = config.module.rules || [];
-      config.module.rules.push({
-        test: /node_modules[\\/]onnxruntime-web[\\/].*\.m?js$/,
-        type: 'asset/resource',
-        generator: {
-          filename: 'static/chunks/[name][ext]',
-        },
-      });
+      // Ignore onnxruntime-web completely - it's loaded dynamically and uses import.meta
+      // This prevents webpack from trying to process .mjs files that use import.meta
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'onnxruntime-web': false,
+      };
     }
     return config;
   },

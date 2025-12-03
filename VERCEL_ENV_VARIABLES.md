@@ -42,9 +42,27 @@ https://canvas-clone.vercel.app
 
 ---
 
+### 3. **REPLICATE_API_TOKEN** (Obrigatória para remoção de fundo)
+Token de API do Replicate para funcionalidades de IA (remoção de fundo, geração de imagens).
+
+**Como obter:**
+1. Acesse https://replicate.com
+2. Faça login ou crie uma conta
+3. Vá em **Account Settings** → **API Tokens**
+4. Crie um novo token ou copie um existente
+
+**Valor:**
+```
+r8_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+**⚠️ Importante:** Mantenha este token seguro e não o compartilhe publicamente.
+
+---
+
 ## 📋 Variáveis Opcionais (mas recomendadas)
 
-### 3. **NEXTAUTH_URL** (Recomendada)
+### 4. **NEXTAUTH_URL** (Recomendada)
 URL base para autenticação (geralmente igual ao NEXT_PUBLIC_APP_URL).
 
 **Valor:**

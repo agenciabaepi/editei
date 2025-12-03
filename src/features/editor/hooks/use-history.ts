@@ -9,6 +9,7 @@ interface UseHistoryProps {
     json: string;
     height: number;
     width: number;
+    thumbnail?: string;
   }) => void;
 };
 
@@ -16,6 +17,8 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
   const [historyIndex, setHistoryIndex] = useState(0);
   const canvasHistory = useRef<string[]>([]);
   const skipSave = useRef(false);
+  const lastThumbnailTime = useRef(0);
+  const THUMBNAIL_INTERVAL = 3000; // 3 seconds (reduced for faster updates)
 
   const canUndo = useCallback(() => {
     return historyIndex > 0;
@@ -42,7 +45,49 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
     const height = workspace?.height || 0;
     const width = workspace?.width || 0;
 
-    saveCallback?.({ json, height, width });
+    // Generate thumbnail only if enough time has passed (to avoid blocking)
+    // Only generate thumbnail every 3 seconds to reduce load
+    let thumbnail: string | undefined;
+    const now = Date.now();
+    
+    // Only generate thumbnail if enough time has passed
+    if (now - lastThumbnailTime.current > THUMBNAIL_INTERVAL) {
+      try {
+        const workspaceRect = workspace as fabric.Rect;
+        if (workspaceRect && width > 0 && height > 0) {
+          // Save current viewport transform
+          const vpt = canvas.viewportTransform;
+          // Reset viewport for thumbnail generation
+          canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          
+          // Generate thumbnail at 40% scale for better quality
+          const scale = 0.4;
+          const thumbnailOptions = {
+            format: 'png',
+            quality: 1.0, // Maximum quality
+            multiplier: scale,
+            left: workspaceRect.left || 0,
+            top: workspaceRect.top || 0,
+            width: width,
+            height: height,
+          };
+          
+          thumbnail = canvas.toDataURL(thumbnailOptions);
+          lastThumbnailTime.current = now;
+          
+          // Restore viewport transform
+          if (vpt) {
+            canvas.setViewportTransform(vpt);
+          }
+        }
+      } catch (error) {
+        console.error('Error generating thumbnail:', error);
+        // Continue without thumbnail if generation fails
+      }
+    }
+
+    // Save immediately (with or without thumbnail)
+    saveCallback?.({ json, height, width, thumbnail });
   }, 
   [
     canvas,

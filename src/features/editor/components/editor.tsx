@@ -27,6 +27,7 @@ import { ImageSidebar } from "@/features/editor/components/image-sidebar";
 import { FilterSidebar } from "@/features/editor/components/filter-sidebar";
 import { AiSidebar } from "@/features/editor/components/ai-sidebar";
 import { RemoveBgSidebar } from "@/features/editor/components/remove-bg-sidebar";
+import { RemoveBgOverlay } from "@/features/editor/components/remove-bg-overlay";
 import { DrawSidebar } from "@/features/editor/components/draw-sidebar";
 import { SettingsSidebar } from "@/features/editor/components/settings-sidebar";
 import { TemplateSidebar } from "@/features/editor/components/template-sidebar";
@@ -83,20 +84,66 @@ export const Editor = ({ initialData }: EditorProps) => {
     }
   }, [activeTool]);
 
-  const debouncedSave = useCallback(
-    debounce(
+  // Use useRef to persist debounced function and mutate function
+  const debouncedSaveRef = useRef<ReturnType<typeof debounce> | null>(null);
+  const mutateRef = useRef(mutate);
+  const disableAutoSaveRef = useRef(disableAutoSave);
+  
+  // Keep refs updated
+  useEffect(() => {
+    mutateRef.current = mutate;
+    disableAutoSaveRef.current = disableAutoSave;
+  }, [mutate, disableAutoSave]);
+  
+  // Initialize debounced function only once
+  useEffect(() => {
+    debouncedSaveRef.current = debounce(
       (values: { 
         json: string,
         height: number,
         width: number,
+        thumbnail?: string,
       }) => {
         // Don't save if auto-save is disabled (for guest users)
-        if (!disableAutoSave) {
-          mutate(values);
+        if (!disableAutoSaveRef.current) {
+          console.log('[AutoSave] Executing save:', { 
+            hasJson: !!values.json, 
+            width: values.width, 
+            height: values.height,
+            hasThumbnail: !!values.thumbnail 
+          });
+          mutateRef.current(values);
+        } else {
+          console.log('[AutoSave] Save disabled (guest user)');
         }
+      },
+      500 // 500ms debounce (original timing)
+    );
+
+    // Cleanup on unmount only
+    return () => {
+      if (debouncedSaveRef.current) {
+        debouncedSaveRef.current.cancel();
+      }
+    };
+  }, []); // Empty deps - only create once
+
+  const debouncedSave = useCallback(
+    (values: { 
+      json: string,
+      height: number,
+      width: number,
+      thumbnail?: string,
+    }) => {
+      if (debouncedSaveRef.current) {
+        console.log('[AutoSave] Queuing save...');
+        debouncedSaveRef.current(values);
+      } else {
+        console.warn('[AutoSave] debouncedSaveRef is null!');
+      }
     },
-    500
-  ), [mutate, disableAutoSave]);
+    []
+  );
 
   const { init, editor } = useEditor({
     defaultState: initialData.json,
@@ -318,8 +365,12 @@ export const Editor = ({ initialData }: EditorProps) => {
             key={JSON.stringify(editor?.canvas.getActiveObject())}
           />
           <div className="flex-1 h-[calc(100%-124px)] bg-muted relative" ref={containerRef}>
-            <div className="bg-white h-full">
+            <div className="bg-white h-full relative">
               <canvas ref={canvasRef} />
+              <RemoveBgOverlay
+                editor={editor}
+                activeTool={activeTool}
+              />
               <CollaboratorCursors
                 collaborators={collaboration.collaborators}
                 currentUserId={collaboration.currentUser.id}

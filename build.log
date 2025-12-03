@@ -1,0 +1,130 @@
+
+> editei@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.4
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./src/app/admin/page.tsx
+523:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/dashboard/images/image-library.tsx
+166:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+195:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/comment-system.tsx
+66:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+98:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/share-dialog.tsx
+285:27  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/editor/components/draggable-layers-panel-clean.tsx
+110:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+237:9  Warning: The 'handlePanelMouseMove' function makes the dependencies of useEffect Hook (at line 279) change on every render. Move it inside the useEffect callback. Alternatively, wrap the definition of 'handlePanelMouseMove' in its own useCallback() Hook.  react-hooks/exhaustive-deps
+
+./src/features/editor/components/editor.tsx
+86:25  Warning: React Hook useCallback received a function whose dependencies are unknown. Pass an inline function instead.  react-hooks/exhaustive-deps
+
+./src/features/editor/components/export-sidebar.tsx
+277:19  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./src/features/editor/components/floating-layers-panel.tsx
+108:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/editor/components/image-sidebar.tsx
+119:23  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/editor/components/layers-sidebar.tsx
+114:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/editor/components/page-manager.tsx
+87:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/editor/components/sidebar-layers-panel.tsx
+107:13  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/features/editor/components/toolbar.tsx
+475:13  Warning: Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images.  jsx-a11y/alt-text
+
+./src/features/editor/hooks/use-layers.ts
+490:6  Warning: React Hook useEffect has missing dependencies: 'generateLayerName', 'generateThumbnail', and 'getLayerType'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/33) ...
+   Generating static pages (8/33) 
+   Generating static pages (16/33) 
+   Generating static pages (24/33) 
+ ✓ Generating static pages (33/33)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    185 B          94.5 kB
+├ ○ /_not-found                          879 B          88.4 kB
+├ ƒ /admin                               9.05 kB         125 kB
+├ ƒ /admin/add-user                      4.39 kB         108 kB
+├ ƒ /admin/projects                      4.83 kB         121 kB
+├ ƒ /admin/subscriptions                 5.63 kB         122 kB
+├ ƒ /admin/system                        4.1 kB         99.8 kB
+├ ƒ /admin/users                         5.6 kB          122 kB
+├ ƒ /api/[[...route]]                    0 B                0 B
+├ ƒ /api/admin/fonts                     0 B                0 B
+├ ƒ /api/admin/fonts/[id]                0 B                0 B
+├ ƒ /api/admin/projects                  0 B                0 B
+├ ƒ /api/admin/projects/[id]             0 B                0 B
+├ ƒ /api/admin/stats                     0 B                0 B
+├ ƒ /api/admin/subscriptions             0 B                0 B
+├ ƒ /api/admin/templates                 0 B                0 B
+├ ƒ /api/admin/templates/[id]            0 B                0 B
+├ ƒ /api/admin/users                     0 B                0 B
+├ ƒ /api/admin/users/[id]                0 B                0 B
+├ ƒ /api/auth/change-password            0 B                0 B
+├ ƒ /api/auth/forgot-password            0 B                0 B
+├ ƒ /api/auth/github                     0 B                0 B
+├ ƒ /api/auth/google                     0 B                0 B
+├ ƒ /api/auth/login                      0 B                0 B
+├ ƒ /api/auth/logout                     0 B                0 B
+├ ƒ /api/auth/me                         0 B                0 B
+├ ƒ /api/auth/register                   0 B                0 B
+├ ƒ /api/auth/update-profile             0 B                0 B
+├ ƒ /api/auth/validate-session           0 B                0 B
+├ ƒ /api/fonts                           0 B                0 B
+├ ƒ /api/init-db                         0 B                0 B
+├ ƒ /api/paypal/checkout                 0 B                0 B
+├ ƒ /api/paypal/success                  0 B                0 B
+├ ƒ /api/shared/[id]                     0 B                0 B
+├ ƒ /api/stripe/checkout                 0 B                0 B
+├ ƒ /api/uploadthing                     0 B                0 B
+├ ƒ /dashboard                           12.9 kB         168 kB
+├ ƒ /dashboard/images                    7.94 kB         124 kB
+├ ƒ /dashboard/settings                  4.78 kB         109 kB
+├ ƒ /dashboard/trash                     6.19 kB         130 kB
+├ ƒ /editor/[projectId]                  753 B           525 kB
+├ ○ /forgot-password                     3.01 kB         105 kB
+├ ○ /help                                185 B          94.5 kB
+├ ○ /pricing                             185 B          94.5 kB
+├ ○ /privacy                             156 B          87.6 kB
+├ ○ /profile                             6.39 kB         110 kB
+├ ƒ /shared/[id]                         1.97 kB         526 kB
+├ ƒ /sign-in                             2.96 kB         105 kB
+├ ƒ /sign-up                             3.08 kB         106 kB
+├ ○ /subscription                        10.5 kB         114 kB
+├ ○ /terms                               156 B          87.6 kB
+└ ○ /teste                               156 B          87.6 kB
++ First Load JS shared by all            87.5 kB
+  ├ chunks/7023-86c4caa5ccacf0e1.js      31.7 kB
+  ├ chunks/fd9d1056-6e083d09f5f1370d.js  53.6 kB
+  └ other shared chunks (total)          2.16 kB
+
+
+ƒ Middleware                             27 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

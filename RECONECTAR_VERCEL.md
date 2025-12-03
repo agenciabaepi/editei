@@ -71,3 +71,4 @@ Se após reconectar ainda der 404:
 4. Se não aparecer, pode ser um problema com o Next.js no Vercel
 5. Nesse caso, pode ser necessário atualizar o Next.js ou verificar a versão
 
+

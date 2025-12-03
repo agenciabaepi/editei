@@ -315,6 +315,50 @@ const buildEditor = ({
         },
       );
     },
+    replaceSelectedImage: (newImageSrc: string) => {
+      const selectedObject = selectedObjects[0];
+      if (selectedObject && selectedObject.type === "image") {
+        const imageObject = selectedObject as fabric.Image;
+        
+        // Store current properties
+        const currentLeft = imageObject.left;
+        const currentTop = imageObject.top;
+        const currentScaleX = imageObject.scaleX;
+        const currentScaleY = imageObject.scaleY;
+        const currentAngle = imageObject.angle;
+        const currentOpacity = imageObject.opacity;
+        const currentFilters = imageObject.filters || [];
+        
+        // Load new image
+        fabric.Image.fromURL(
+          newImageSrc,
+          (newImage) => {
+            // Apply stored properties to new image
+            newImage.set({
+              left: currentLeft,
+              top: currentTop,
+              scaleX: currentScaleX,
+              scaleY: currentScaleY,
+              angle: currentAngle,
+              opacity: currentOpacity,
+              filters: currentFilters,
+            });
+            
+            // Replace the old image with the new one
+            const index = canvas.getObjects().indexOf(imageObject);
+            canvas.remove(imageObject);
+            canvas.add(newImage);
+            // Move to the same position in the stack
+            canvas.moveTo(newImage, index);
+            canvas.setActiveObject(newImage);
+            canvas.renderAll();
+          },
+          {
+            crossOrigin: "anonymous",
+          },
+        );
+      }
+    },
     delete: () => {
       canvas.getActiveObjects().forEach((object) => canvas.remove(object));
       canvas.discardActiveObject();

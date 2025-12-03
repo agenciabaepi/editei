@@ -19,6 +19,7 @@ import {
 import { useGetProjects } from "@/features/projects/api/use-get-projects";
 import { useDeleteProject } from "@/features/projects/api/use-delete-project";
 import { useDuplicateProject } from "@/features/projects/api/use-duplicate-project";
+import { ProjectPreview } from "@/components/project-preview";
 
 import {
   DropdownMenuContent,
@@ -46,7 +47,7 @@ export const EnhancedProjectsSection = () => {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [projectToRename, setProjectToRename] = useState<{ id: string; name: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [selectedFolder, setSelectedFolder] = useState("all");
   
   const duplicateMutation = useDuplicateProject();
@@ -205,10 +206,22 @@ export const EnhancedProjectsSection = () => {
               <TableRow key={project.id}>
                 <TableCell
                   onClick={() => router.push(`/editor/${project.id}`)}
-                  className="font-medium flex items-center gap-x-2 cursor-pointer"
+                  className="font-medium flex items-center gap-x-3 cursor-pointer"
                 >
-                  <FileIcon className="size-6" />
-                  {project.name}
+                  {project.thumbnail ? (
+                    <div className="relative w-12 h-12 rounded overflow-hidden border flex-shrink-0">
+                      <img
+                        src={project.thumbnail}
+                        alt={project.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center flex-shrink-0">
+                      <FileIcon className="size-5 text-gray-400" />
+                    </div>
+                  )}
+                  <span className="truncate">{project.name}</span>
                 </TableCell>
                 <TableCell
                   onClick={() => router.push(`/editor/${project.id}`)}
@@ -267,15 +280,29 @@ export const EnhancedProjectsSection = () => {
           {filteredProjects.map((project: any) => (
             <div key={project.id} className="group cursor-pointer">
               <div 
-                className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg mb-2 relative overflow-hidden hover:shadow-md transition-shadow"
+                className="aspect-square rounded-lg mb-2 relative overflow-hidden hover:shadow-md transition-shadow border"
                 onClick={() => router.push(`/editor/${project.id}`)}
+                style={{ 
+                  aspectRatio: project.width && project.height ? `${project.width}/${project.height}` : '1/1'
+                }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-purple-500 opacity-80"></div>
+                <ProjectPreview
+                  json={project.json}
+                  width={project.width}
+                  height={project.height}
+                  thumbnail={project.thumbnail}
+                  className="absolute inset-0 w-full h-full"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <p className="opacity-0 group-hover:opacity-100 text-white font-medium text-sm transition-opacity">
+                    Abrir no editor
+                  </p>
+                </div>
                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="icon" variant="secondary" className="w-6 h-6">
-                        <MoreHorizontal className="size-3" />
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button size="icon" variant="secondary" className="w-7 h-7 bg-white/90 hover:bg-white">
+                        <MoreHorizontal className="size-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

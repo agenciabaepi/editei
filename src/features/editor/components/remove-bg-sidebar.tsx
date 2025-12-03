@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader, Info } from "lucide-react";
+import { useState, useEffect } from "react";
 
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
 
@@ -8,10 +9,12 @@ import { ToolSidebarClose } from "@/features/editor/components/tool-sidebar-clos
 import { ToolSidebarHeader } from "@/features/editor/components/tool-sidebar-header";
 
 import { useRemoveBg } from "@/features/ai/api/use-remove-bg";
+import { setRemoveBgProcessing } from "@/features/editor/components/remove-bg-overlay";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 
 interface RemoveBgSidebarProps {
   editor: Editor | undefined;
@@ -26,11 +29,45 @@ export const RemoveBgSidebar = ({
 }: RemoveBgSidebarProps) => {
   const { shouldBlock, triggerPaywall } = usePaywall();
   const mutation = useRemoveBg();
+  const [isFirstTime, setIsFirstTime] = useState(true);
+  const [hasProcessedBefore, setHasProcessedBefore] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const selectedObject = editor?.selectedObjects[0];
 
   // @ts-ignore
   const imageSrc = selectedObject?._originalElement?.currentSrc;
+
+  // Update global processing state for overlay
+  useEffect(() => {
+    setRemoveBgProcessing(mutation.isPending);
+    return () => {
+      setRemoveBgProcessing(false);
+    };
+  }, [mutation.isPending]);
+
+  // Simulate progress animation
+  useEffect(() => {
+    if (mutation.isPending) {
+      setProgress(0);
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev; // Stop at 90% until completion
+          return prev + Math.random() * 15;
+        });
+      }, 500);
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [mutation.isPending]);
+
+  // Check if models have been loaded before (stored in localStorage)
+  useEffect(() => {
+    const hasLoaded = localStorage.getItem('bg-removal-models-loaded') === 'true';
+    setHasProcessedBefore(hasLoaded);
+    setIsFirstTime(!hasLoaded);
+  }, []);
 
   const onClose = () => {
     onChangeActiveTool("select");
@@ -42,14 +79,46 @@ export const RemoveBgSidebar = ({
       return;
     }
 
+    console.log('[Remove BG Sidebar] Starting mutation, imageSrc:', imageSrc?.substring(0, 50) + '...');
+    
     mutation.mutate({
       image: imageSrc,
     }, {
       onSuccess: (response) => {
-        const data = 'data' in response ? response.data : response;
-        if (typeof data === 'string') {
-          editor?.addImage(data);
+        console.log('[Remove BG Sidebar] Success response received');
+        setProgress(100); // Complete progress
+        
+        // Mark that models have been loaded
+        localStorage.setItem('bg-removal-models-loaded', 'true');
+        setHasProcessedBefore(true);
+        setIsFirstTime(false);
+        
+        // Reset progress after a brief delay
+        setTimeout(() => setProgress(0), 500);
+        
+        try {
+          const data = response.data;
+          if (typeof data === 'string' && data.startsWith('data:')) {
+            // Remove the original image first, then add the new one
+            const selectedObject = editor?.selectedObjects[0];
+            if (selectedObject && editor?.canvas) {
+              editor.canvas.remove(selectedObject);
+              editor.canvas.discardActiveObject();
+              editor.canvas.renderAll();
+            }
+            // Add the new image without background
+            console.log('[Remove BG Sidebar] Adding image without background');
+            editor?.addImage(data);
+            console.log('[Remove BG Sidebar] Image added successfully');
+          } else {
+            console.error('[Remove BG Sidebar] Invalid response format:', typeof data, data?.substring(0, 50));
+          }
+        } catch (error) {
+          console.error('[Remove BG Sidebar] Error processing response:', error);
         }
+      },
+      onError: (error) => {
+        console.error('[Remove BG Sidebar] Mutation error:', error);
       },
     });
   };
@@ -87,13 +156,52 @@ export const RemoveBgSidebar = ({
                 className="object-cover"
               />
             </div>
+            
+            {/* Progress bar */}
+            {mutation.isPending && (
+              <div className="space-y-2">
+                <Progress value={progress} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{isFirstTime ? 'Carregando modelos...' : 'Removendo fundo...'}</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+              </div>
+            )}
             <Button
               disabled={mutation.isPending}
               onClick={onClick}
               className="w-full"
             >
-              Remove background
+              {mutation.isPending ? (
+                <>
+                  <Loader className="size-4 mr-2 animate-spin" />
+                  {isFirstTime ? 'Carregando modelos...' : 'Removendo fundo...'}
+                </>
+              ) : (
+                "Remover fundo"
+              )}
             </Button>
+            {isFirstTime && !mutation.isPending && (
+              <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <Info className="size-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-800">
+                  <strong>Primeira vez?</strong> A primeira execução pode demorar mais (~30-60s) enquanto os modelos de IA são baixados. As próximas vezes serão muito mais rápidas!
+                </p>
+              </div>
+            )}
+            {mutation.isPending && isFirstTime && (
+              <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-md border border-amber-200">
+                <Loader className="size-4 text-amber-600 mt-0.5 animate-spin flex-shrink-0" />
+                <p className="text-xs text-amber-800">
+                  <strong>Carregando modelos pela primeira vez...</strong> Isso pode levar 30-60 segundos. Por favor, aguarde. As próximas vezes serão instantâneas!
+                </p>
+              </div>
+            )}
+            {mutation.isError && (
+              <p className="text-sm text-red-500 text-center">
+                {mutation.error instanceof Error ? mutation.error.message : 'Erro ao remover fundo'}
+              </p>
+            )}
           </div>
         </ScrollArea>
       )}

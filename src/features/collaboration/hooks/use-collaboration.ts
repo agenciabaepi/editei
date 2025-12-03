@@ -102,25 +102,30 @@ export const useCollaboration = ({
 
   // Generate shareable link
   const generateShareLink = useCallback(async (): Promise<string> => {
-    const token = uuidv4();
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/shared/${projectId}?token=${token}`;
-    
-    // In production, save this to backend
-    setState(prev => ({
-      ...prev,
-      shareLink: {
-        id: uuidv4(),
-        projectId,
-        token,
-        settings: prev.shareSettings,
-        createdBy: userId,
-        createdAt: new Date(),
-        isActive: true,
-      },
-    }));
+    try {
+      const token = uuidv4();
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      const shareUrl = `${baseUrl}/shared/${projectId}?token=${token}`;
+      
+      // In production, save this to backend
+      setState(prev => ({
+        ...prev,
+        shareLink: {
+          id: uuidv4(),
+          projectId,
+          token,
+          settings: prev.shareSettings,
+          createdBy: userId,
+          createdAt: new Date(),
+          isActive: true,
+        },
+      }));
 
-    return shareUrl;
+      return shareUrl;
+    } catch (error) {
+      console.error('Error generating share link:', error);
+      throw new Error('Failed to generate share link. Please try again.');
+    }
   }, [projectId, userId]);
 
   // Revoke share link

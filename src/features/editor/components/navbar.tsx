@@ -14,7 +14,8 @@ import {
   Users,
   Image,
   FileText,
-  Layers
+  Layers,
+  ArrowLeft
 } from "lucide-react";
 
 import { EXPORT_FORMATS, getFormatsByCategory } from "@/features/editor/constants/export-formats";
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ProjectNameDialog } from "@/components/project-name-dialog";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   id: string;
@@ -71,6 +73,7 @@ export const Navbar = ({
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const { shouldBlock, triggerPaywall } = usePaywall();
   const isPro = !shouldBlock;
+  const router = useRouter();
   
   const data = useMutationState({
     filters: {
@@ -274,6 +277,15 @@ export const Navbar = ({
 
   return (
     <nav className="w-full flex items-center p-4 h-[68px] gap-x-8 border-b lg:pl-[34px]">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => router.push("/dashboard/projects")}
+        className="mr-2"
+        title="Voltar para projetos"
+      >
+        <ArrowLeft className="size-4" />
+      </Button>
       <Logo />
       <Button
         variant="ghost"

@@ -57,3 +57,4 @@ No Vercel, vá em **Settings** → **Environment Variables** e adicione:
 - [ ] Nenhum erro no build
 - [ ] Todas as variáveis de ambiente configuradas no Vercel
 
+

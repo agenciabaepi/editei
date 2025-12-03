@@ -372,17 +372,27 @@ export const usePageManager = ({
     }));
   }, []);
 
-  // Auto-save current page when canvas changes
+  // Auto-save current page when canvas changes (throttled to avoid blocking)
   useEffect(() => {
     if (!editor?.canvas) return;
 
+    let thumbnailTimeout: NodeJS.Timeout | null = null;
+    
     const handleCanvasChange = () => {
-      const currentPage = state.pages.find(p => p.id === state.currentPageId);
-      if (currentPage && !currentPage.isLocked) {
-        // Generate thumbnail
-        const thumbnail = generateThumbnail(editor.canvas);
-        updatePageThumbnail(state.currentPageId, thumbnail);
-      }
+      // Throttle thumbnail generation to avoid blocking UI
+      if (thumbnailTimeout) return;
+      
+      thumbnailTimeout = setTimeout(() => {
+        const currentPage = state.pages.find(p => p.id === state.currentPageId);
+        if (currentPage && !currentPage.isLocked) {
+          // Generate thumbnail asynchronously
+          requestAnimationFrame(() => {
+            const thumbnail = generateThumbnail(editor.canvas);
+            updatePageThumbnail(state.currentPageId, thumbnail);
+          });
+        }
+        thumbnailTimeout = null;
+      }, 500); // Only update thumbnail every 500ms
     };
 
     const canvas = editor.canvas;
@@ -391,6 +401,9 @@ export const usePageManager = ({
     canvas.on('object:modified', handleCanvasChange);
 
     return () => {
+      if (thumbnailTimeout) {
+        clearTimeout(thumbnailTimeout);
+      }
       canvas.off('object:added', handleCanvasChange);
       canvas.off('object:removed', handleCanvasChange);
       canvas.off('object:modified', handleCanvasChange);

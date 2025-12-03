@@ -24,11 +24,15 @@ export const CustomSignInCard = () => {
     setError("");
 
     try {
-      const response = await fetch('/api/auth/login', {
+      // Use window.location.origin to ensure we use the correct port
+      const apiUrl = `${window.location.origin}/api/auth/login`;
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ email, password }),
       });
 
@@ -38,10 +42,22 @@ export const CustomSignInCard = () => {
         // Force complete page reload
         window.location.replace('/dashboard');
       } else {
-        setError(data.error || 'Login failed');
+        // Translate error messages to Portuguese
+        const errorMessage = data.error || 'Falha no login';
+        let translatedError = errorMessage;
+        
+        if (errorMessage.includes('Invalid credentials')) {
+          translatedError = 'Credenciais inválidas. Verifique seu email e senha.';
+        } else if (errorMessage.includes('social login')) {
+          translatedError = 'Esta conta foi criada com login social. Use o mesmo método para entrar.';
+        } else if (errorMessage.includes('User already exists')) {
+          translatedError = 'Este usuário já existe.';
+        }
+        
+        setError(translatedError);
       }
     } catch (error) {
-        setError('Ocorreu um erro durante o login');
+        setError('Ocorreu um erro durante o login. Tente novamente.');
     } finally {
       setLoading(false);
     }

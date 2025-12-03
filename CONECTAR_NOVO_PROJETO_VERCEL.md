@@ -87,3 +87,4 @@ Se após tudo isso ainda der 404:
 
 O código atual está usando um Server Component simples na rota raiz (sem "use client"). Isso deve funcionar perfeitamente no Vercel. Se funcionar, podemos restaurar o conteúdo completo da landing page gradualmente.
 
+

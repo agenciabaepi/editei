@@ -12,8 +12,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validatedData = LoginSchema.parse(body);
     
+    // Normalize email before login
+    const normalizedEmail = validatedData.email.trim().toLowerCase();
+    
     const { user, token } = await loginUser(
-      validatedData.email,
+      normalizedEmail,
       validatedData.password
     );
     

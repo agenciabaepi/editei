@@ -57,3 +57,4 @@ Use a **Opção 2 (conexão direta)** primeiro - ela é mais confiável e não d
 postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/postgres
 ```
 
+

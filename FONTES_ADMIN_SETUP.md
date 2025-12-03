@@ -95,3 +95,4 @@ As fontes customizadas precisam ser integradas no `font-loader.ts` para aparecer
 - Certifique-se de que a fonte está marcada como "Ativa"
 - Verifique se o `font-loader.ts` está carregando fontes do banco (próxima etapa)
 
+

@@ -25,8 +25,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all subscriptions with user information
+    // Use DISTINCT ON to get only the most recent subscription per user
     const subscriptionsResult = await client.query(`
-      SELECT 
+      SELECT DISTINCT ON (s.user_id)
         s.id,
         s.user_id,
         s.stripe_subscription_id,
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         u.name as user_name
       FROM subscriptions s
       JOIN users u ON s.user_id = u.id
-      ORDER BY s.created_at DESC
+      ORDER BY s.user_id, s.created_at DESC
     `);
     
     client.release();
@@ -92,21 +93,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if user already has an active subscription
+    // Check if user already has a subscription (any status)
     const existingSubscription = await client.query(
-      `SELECT id FROM subscriptions WHERE user_id = $1 AND status = 'active'`,
+      `SELECT id, stripe_subscription_id, stripe_customer_id FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
       [user_id]
     );
 
-    if (existingSubscription.rows[0]) {
-      client.release();
-      return NextResponse.json({ error: "User already has an active subscription" }, { status: 400 });
-    }
-
-    // Generate mock Stripe IDs for demo purposes
-    const stripeCustomerId = `cus_${Math.random().toString(36).substring(2, 15)}`;
-    const stripeSubscriptionId = `sub_${Math.random().toString(36).substring(2, 15)}`;
-    
     // Calculate period end based on plan
     const currentPeriodEnd = new Date();
     if (plan === 'monthly') {
@@ -115,19 +107,39 @@ export async function POST(request: NextRequest) {
       currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
     }
 
-    // Create subscription
-    const result = await client.query(`
-      INSERT INTO subscriptions (
-        user_id, 
-        stripe_subscription_id, 
-        stripe_customer_id, 
-        status, 
-        stripe_current_period_end,
-        created_at,
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-      RETURNING *
-    `, [user_id, stripeSubscriptionId, stripeCustomerId, status, currentPeriodEnd]);
+    let result;
+
+    if (existingSubscription.rows[0]) {
+      // Update existing subscription instead of creating a new one
+      const existing = existingSubscription.rows[0];
+      result = await client.query(`
+        UPDATE subscriptions 
+        SET 
+          status = $1,
+          stripe_current_period_end = $2,
+          updated_at = NOW()
+        WHERE id = $3
+        RETURNING *
+      `, [status, currentPeriodEnd, existing.id]);
+    } else {
+      // Generate mock Stripe IDs for demo purposes
+      const stripeCustomerId = `cus_${Math.random().toString(36).substring(2, 15)}`;
+      const stripeSubscriptionId = `sub_${Math.random().toString(36).substring(2, 15)}`;
+      
+      // Create new subscription
+      result = await client.query(`
+        INSERT INTO subscriptions (
+          user_id, 
+          stripe_subscription_id, 
+          stripe_customer_id, 
+          status, 
+          stripe_current_period_end,
+          created_at,
+          updated_at
+        ) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        RETURNING *
+      `, [user_id, stripeSubscriptionId, stripeCustomerId, status, currentPeriodEnd]);
+    }
 
     client.release();
 

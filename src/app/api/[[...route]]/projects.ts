@@ -11,6 +11,7 @@ const projectsInsertSchema = z.object({
   height: z.number(),
   isTemplate: z.boolean().optional(),
   isPro: z.boolean().optional(),
+  thumbnail: z.string().optional(),
 });
 
 type Variables = {
@@ -554,6 +555,10 @@ const app = new Hono<{ Variables: Variables }>()
         if (values.height) {
           updateFields.push(`height = $${paramCount++}`);
           updateValues.push(values.height);
+        }
+        if (values.thumbnail) {
+          updateFields.push(`thumbnail = $${paramCount++}`);
+          updateValues.push(values.thumbnail);
         }
         
         updateFields.push(`updated_at = $${paramCount++}`);

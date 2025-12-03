@@ -10,6 +10,7 @@ type RequestType = {
   json?: string;
   width?: number;
   height?: number;
+  thumbnail?: string;
 };
 
 export const useUpdateProject = (id: string) => {
@@ -22,16 +23,26 @@ export const useUpdateProject = (id: string) => {
   >({
     mutationKey: ["project", { id }],
     mutationFn: async (json) => {
-      const response = await client.api.projects[":id"].$patch({ 
-        param: { id },
-        json
-      } as any);
+      console.log('[UpdateProject] Starting mutation for project:', id);
+      try {
+        const response = await client.api.projects[":id"].$patch({ 
+          param: { id },
+          json
+        } as any);
 
-      if (!response.ok) {
-        throw new Error("Failed to update project");
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('[UpdateProject] Response not OK:', response.status, errorText);
+          throw new Error(`Failed to update project: ${errorText}`);
+        }
+
+        const result = await response.json();
+        console.log('[UpdateProject] Successfully updated project:', id);
+        return result;
+      } catch (error) {
+        console.error('[UpdateProject] Error updating project:', error);
+        throw error;
       }
-
-      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });

@@ -59,15 +59,14 @@ const app = new Hono<{ Variables: Variables }>()
 
     try {
       const client = await pool.connect();
+      // Get the most recent subscription for the user
       const result = await client.query(
-        `SELECT * FROM subscriptions WHERE user_id = $1 LIMIT 1`,
+        `SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
         [user.id]
       );
       client.release();
 
       const subscription = result.rows[0] || null;
-      
-      console.log("Raw subscription data:", subscription);
       
       // Convert date strings to Date objects for proper comparison
       if (subscription && subscription.stripe_current_period_end) {
@@ -76,13 +75,12 @@ const app = new Hono<{ Variables: Variables }>()
       
       const active = checkIsActive(subscription);
       
-      console.log("Processed subscription:", {
-        ...subscription,
-        active,
-        hasStripePrice: !!subscription?.stripe_price_id,
-        hasEndDate: !!subscription?.stripe_current_period_end,
+      console.log("Subscription check:", {
+        userId: user.id,
+        hasSubscription: !!subscription,
         status: subscription?.status,
-        endDate: subscription?.stripe_current_period_end,
+        active,
+        periodEnd: subscription?.stripe_current_period_end,
         currentTime: new Date()
       });
 

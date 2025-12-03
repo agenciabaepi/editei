@@ -19,16 +19,24 @@ export const SidebarItem = ({
   onClick,
 }: SidebarItemProps) => {
   return (
-    <Link href={href} onClick={onClick}>
+    <Link href={href} onClick={onClick} className="flex flex-col items-center justify-center py-3 group">
       <div className={cn(
-        "flex items-center px-3 py-3 rounded-xl bg-transparent hover:bg-white transition",
-        isActive && "bg-white",
+        "flex items-center justify-center w-12 h-12 rounded-xl transition-all",
+        isActive 
+          ? "bg-white shadow-md" 
+          : "bg-transparent group-hover:bg-white/50",
       )}>
-        <Icon className="size-4 mr-2 stroke-2" />
-        <span className="text-sm font-medium">
-          {label}
-        </span>
+        <Icon className={cn(
+          "size-5 stroke-2 transition-colors",
+          isActive ? "text-purple-600" : "text-purple-700 group-hover:text-purple-600"
+        )} />
       </div>
+      <span className={cn(
+        "text-xs font-medium mt-1.5 transition-colors text-center",
+        isActive ? "text-purple-700" : "text-purple-600/80 group-hover:text-purple-700"
+      )}>
+        {label}
+      </span>
     </Link>
   );
 };

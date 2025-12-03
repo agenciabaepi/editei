@@ -27,3 +27,4 @@ postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/pos
 - Use a Opção 1 (pooling) para produção - é mais eficiente
 - Após adicionar, faça um redeploy para aplicar
 
+

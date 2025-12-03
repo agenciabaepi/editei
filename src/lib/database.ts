@@ -86,10 +86,24 @@ export const userQueries = {
   async findUserByEmail(email: string) {
     const client = await pool.connect();
     try {
+      // Normalize email for case-insensitive search
+      const normalizedEmail = email.trim().toLowerCase();
+      console.log('[DB] Searching for user by email', { 
+        inputEmail: email,
+        normalizedEmail 
+      });
+      
       const result = await client.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
+        'SELECT * FROM users WHERE LOWER(TRIM(email)) = $1',
+        [normalizedEmail]
       );
+      
+      console.log('[DB] Query result', { 
+        found: result.rows.length > 0,
+        rowCount: result.rows.length,
+        email: result.rows[0]?.email 
+      });
+      
       return result.rows[0];
     } finally {
       client.release();

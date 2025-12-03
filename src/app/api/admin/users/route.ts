@@ -72,10 +72,13 @@ export async function POST(request: NextRequest) {
 
     const { name, email, password, role } = await request.json();
 
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if user already exists
     const existingUser = await client.query(
-      `SELECT id FROM users WHERE email = $1`,
-      [email]
+      `SELECT id FROM users WHERE LOWER(TRIM(email)) = $1`,
+      [normalizedEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -86,10 +89,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new user
+    // Hash password before saving
+    const { hashPassword } = await import('@/lib/auth');
+    const hashedPassword = await hashPassword(password);
+
+    // Create new user with normalized email and hashed password
     const newUserResult = await client.query(
       `INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role, created_at`,
-      [name, email, password, role || 'user']
+      [name, normalizedEmail, hashedPassword, role || 'user']
     );
     
     client.release();

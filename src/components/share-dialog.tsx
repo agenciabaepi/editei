@@ -63,11 +63,18 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const handleGenerateLink = async () => {
-    const link = await onGenerateLink();
-    if (link) {
-      await navigator.clipboard.writeText(link);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
+    try {
+      const link = await onGenerateLink();
+      if (link) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(link);
+        }
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 2000);
+      }
+    } catch (error) {
+      console.error('Error generating link:', error);
+      alert(error instanceof Error ? error.message : 'Failed to generate share link. Please try again.');
     }
   };
 

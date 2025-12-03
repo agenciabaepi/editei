@@ -20,21 +20,28 @@ export const checkIsActive = (
   let active = false;
 
   if (subscription) {
-    // Free plan is always active
+    // Free plan is always inactive
     if (subscription.status === 'free') {
       active = false; // Free plan users should see upgrade prompts
     }
-    // Pro plan requires valid subscription data
-    else if (
-      subscription.stripe_price_id &&
-      subscription.stripe_current_period_end &&
-      subscription.status === 'active'
-    ) {
-      const periodEndTime = subscription.stripe_current_period_end.getTime();
-      const currentTime = Date.now();
-      const gracePeriod = DAY_IN_MS;
-      
-      active = periodEndTime + gracePeriod > currentTime;
+    // Pro plan - check if status is active
+    else if (subscription.status === 'active') {
+      // If there's a period end date, check if it's still valid
+      if (subscription.stripe_current_period_end) {
+        const periodEndTime = subscription.stripe_current_period_end.getTime();
+        const currentTime = Date.now();
+        const gracePeriod = DAY_IN_MS;
+        
+        active = periodEndTime + gracePeriod > currentTime;
+      } else {
+        // If no period end date but status is active, consider it active
+        // This handles admin-created subscriptions without period end
+        active = true;
+      }
+    }
+    // If status is 'trialing', also consider active
+    else if (subscription.status === 'trialing') {
+      active = true;
     }
   }
 

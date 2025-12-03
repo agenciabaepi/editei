@@ -44,3 +44,4 @@ echo "   - Adicione as variáveis de ambiente"
 echo "   - Faça o deploy"
 echo ""
 
+

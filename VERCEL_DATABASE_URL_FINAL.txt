@@ -58,3 +58,4 @@ postgresql://postgres:%40Deusefiel7@db.hmapxmbfhblrfjoweoed.supabase.co:5432/pos
 
 O erro "Tenant or user not found" deve desaparecer e o login deve funcionar!
 
+

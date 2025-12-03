@@ -14,7 +14,27 @@ export async function hashPassword(password: string): Promise<string> {
 
 // Verify password
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
+  if (!password || !hashedPassword) {
+    console.error('[AUTH] verifyPassword: Missing password or hash', {
+      hasPassword: !!password,
+      hasHash: !!hashedPassword
+    });
+    return false;
+  }
+  
+  try {
+    const result = await bcrypt.compare(password, hashedPassword);
+    console.log('[AUTH] verifyPassword result', {
+      passwordLength: password.length,
+      hashLength: hashedPassword.length,
+      hashPrefix: hashedPassword.substring(0, 10),
+      result
+    });
+    return result;
+  } catch (error) {
+    console.error('[AUTH] verifyPassword error:', error);
+    return false;
+  }
 }
 
 // Create session
@@ -77,8 +97,11 @@ export async function logout() {
 // Register user
 export async function registerUser(email: string, password: string, name?: string) {
   try {
+    // Normalize email (trim and lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+    
     // Check if user already exists
-    const existingUser = await userQueries.findUserByEmail(email);
+    const existingUser = await userQueries.findUserByEmail(normalizedEmail);
     if (existingUser) {
       throw new Error('User already exists');
     }
@@ -86,8 +109,8 @@ export async function registerUser(email: string, password: string, name?: strin
     // Hash password
     const hashedPassword = await hashPassword(password);
     
-    // Create user
-    const user = await userQueries.createUser(email, hashedPassword, name);
+    // Create user with normalized email
+    const user = await userQueries.createUser(normalizedEmail, hashedPassword, name);
     
     // Create session
     const token = await createSession(user.id);
@@ -101,20 +124,61 @@ export async function registerUser(email: string, password: string, name?: strin
 // Login user
 export async function loginUser(email: string, password: string) {
   try {
+    // Normalize email (trim and lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    console.log('[LOGIN] Attempting login', { 
+      originalEmail: email, 
+      normalizedEmail,
+      passwordLength: password.length 
+    });
+    
     // Find user
-    const user = await userQueries.findUserByEmail(email);
+    const user = await userQueries.findUserByEmail(normalizedEmail);
     if (!user) {
+      console.error('[LOGIN] User not found', { 
+        email: normalizedEmail,
+        searchedEmail: normalizedEmail 
+      });
       throw new Error('Invalid credentials');
+    }
+    
+    console.log('[LOGIN] User found', { 
+      userId: user.id,
+      userEmail: user.email,
+      hasPassword: !!user.password,
+      passwordHashLength: user.password?.length || 0
+    });
+    
+    // Check if user has a password (OAuth users don't have passwords)
+    if (!user.password) {
+      console.error('[LOGIN] User has no password (OAuth user)', { 
+        email: normalizedEmail,
+        userId: user.id 
+      });
+      throw new Error('This account was created with social login. Please use the same method to sign in.');
     }
     
     // Verify password
+    console.log('[LOGIN] Verifying password...');
     const isValid = await verifyPassword(password, user.password);
+    console.log('[LOGIN] Password verification result', { isValid });
+    
     if (!isValid) {
+      console.error('[LOGIN] Invalid password', { 
+        email: normalizedEmail,
+        userId: user.id,
+        passwordHashPrefix: user.password.substring(0, 20) + '...'
+      });
       throw new Error('Invalid credentials');
     }
     
+    console.log('[LOGIN] Password valid, creating session...');
+    
     // Create session
     const token = await createSession(user.id);
+    
+    console.log('[LOGIN] Login successful', { userId: user.id, email: user.email });
     
     return { 
       user: {
@@ -126,6 +190,7 @@ export async function loginUser(email: string, password: string) {
       token 
     };
   } catch (error) {
+    console.error('[LOGIN] Login error:', error);
     throw error;
   }
 }

@@ -185,6 +185,7 @@ export interface EditorHookProps {
     json: string;
     height: number;
     width: number;
+    thumbnail?: string;
   }) => void;
 };
 
@@ -232,6 +233,7 @@ export interface Editor {
   onPaste: () => void;
   changeImageFilter: (value: string) => void;
   addImage: (value: string) => void;
+  replaceSelectedImage: (newImageSrc: string) => void;
   delete: () => void;
   changeFontSize: (value: number) => void;
   getActiveFontSize: () => number;

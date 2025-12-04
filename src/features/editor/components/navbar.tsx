@@ -462,43 +462,14 @@ export const Navbar = ({
               )}
             </Button>
           )}
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost">
-                Export
-                <Download className="size-4 ml-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-60">
-              {(['image', 'vector', 'document'] as const).map((category) => {
-                const Icon = categoryIcons[category];
-                const formats = getFormatsByCategory(category);
-                
-                return formats.map((format) => (
-                  <DropdownMenuItem
-                    key={format.id}
-                    className="flex items-center gap-x-2"
-                    onClick={() => handleExport(format.id)}
-                  >
-                    <Icon className="size-8" />
-                    <div>
-                      <p className="flex items-center gap-2">
-                        {format.name}
-                        {format.requiresPro && !isPro && (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded">
-                            Pro
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format.description}
-                      </p>
-                    </div>
-                  </DropdownMenuItem>
-                ));
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button 
+            size="sm" 
+            variant="ghost"
+            onClick={() => onChangeActiveTool("export")}
+          >
+            Export
+            <Download className="size-4 ml-4" />
+          </Button>
           <UserButton />
         </div>
       </div>
